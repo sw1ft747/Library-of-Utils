@@ -420,6 +420,281 @@ enum eButtonType
 *           Classes             *
 \*===============================*/
 
+/** Class Matrix
+* Signature: class CMatrix(array matrix, int rows, int columns)
+*/
+
+class CMatrix
+{
+	constructor(matrix, iRows = null, iColumns = null)
+	{
+		if (iRows != null && iColumns != null && iRows > 0 && iColumns > 0)
+		{
+			m_iRows = iRows;
+			m_iColumns = iColumns;
+		}
+		else
+		{
+			local length = matrix.len();
+			local iWidestColumn = 0;
+			if (length > 0)
+			{
+				for (local i = 0; i < length; i++)
+				{
+					if (iWidestColumn < matrix[i].len())
+						iWidestColumn = matrix[i].len();
+				}
+				for (local j = 0; j < length; j++)
+				{
+					while (matrix[j].len() < iWidestColumn)
+						matrix[j].push(0.0);
+				}
+			}
+			else
+			{
+				matrix.push([0.0]);
+				iWidestColumn = length = 1;
+			}
+			m_iRows = length;
+			m_iColumns = iWidestColumn;
+		}
+		m_aMatrix = matrix;
+	}
+	function Multiply(matrix)
+	{
+		if (matrix instanceof CMatrix)
+		{
+			if (m_iColumns == matrix.GetRows())
+			{
+				local aMatrixOutput = [];
+				local aMatrix = matrix.GetMatrix();
+				local columns = matrix.GetColumns();
+				for (local n = 0; n < m_iRows; n++)
+				{
+					aMatrixOutput.push([]);
+					for (local m = 0; m < columns; m++)
+						aMatrixOutput[n].push(0.0);
+				}
+				for (local i = 0; i < m_iRows; i++)
+				{
+					for (local j = 0; j < columns; j++)
+					{
+						for (local k = 0; k < m_iColumns; k++)
+						{
+							aMatrixOutput[i][j] += m_aMatrix[i][k] * aMatrix[k][j];
+						}
+					}
+				}
+				return CMatrix(aMatrixOutput, m_iRows, columns);
+			}
+			throw "wrong matrix size";
+		}
+		throw "argument is not a matrix";
+	}
+	function Add(matrix)
+	{
+		if (matrix instanceof CMatrix)
+		{
+			if (m_iRows == matrix.GetRows() && m_iColumns == matrix.GetColumns())
+			{
+				local aMatrixOutput = [];
+				local aMatrix = matrix.GetMatrix();
+				for (local i = 0; i < m_iRows; i++)
+				{
+					aMatrixOutput.push(GetRowArray(i));
+					for (local j = 0; j < m_iColumns; j++)
+					{
+						aMatrixOutput[i][j] += aMatrix[i][j];
+					}
+				}
+				return CMatrix(aMatrixOutput, m_iRows, m_iColumns);
+			}
+			throw "wrong matrix size";
+		}
+		throw "expected a matrix";
+	}
+	function Scale(value)
+	{
+		local aMatrix = [];
+		for (local i = 0; i < m_iRows; i++)
+		{
+			aMatrix.push(GetRowArray(i));
+			for (local j = 0; j < m_iColumns; j++)
+			{
+				aMatrix[i][j] *= value;
+			}
+		}
+		return CMatrix(aMatrix, m_iRows, m_iColumns);
+	}
+	function Division(value)
+	{
+		return Scale(1.0 / value);
+	}
+	function Determinant()
+	{
+		if (!IsSquare())
+			throw "expected a square matrix";
+		
+		if (m_iRows == 1)
+			return m_aMatrix[0][0];
+
+		if (m_iRows == 2)
+			return m_aMatrix[0][0] * m_aMatrix[1][1] - m_aMatrix[0][1] * m_aMatrix[1][0];
+
+		local sign = 1;
+		local determinant = 0;
+		
+		if ("Vector" in getroottable() && m_aMatrix[0][0] instanceof Vector)
+			determinant = Vector(0.0, 0.0, 0.0);
+
+		for (local i = 0; i < m_iColumns; i++)
+		{
+			determinant += m_aMatrix[0][i] * GetMinor(0, i).Determinant() * sign;
+			sign *= -1;
+		}
+		return (m_Determinant = determinant);
+	}
+	function Inverse()
+	{
+		if (!IsSquare())
+			throw "expected a square matrix";
+		
+		local aMatrixOutput = [];
+		for (local i = 0; i < m_iRows; i++)
+		{
+			aMatrixOutput.push([]);
+			for (local j = 0; j < m_iColumns; j++)
+			{
+				aMatrixOutput[i].push(GetMinor(i, j).Determinant() * ((i + j + 2) % 2 ? -1.0 : 1.0));
+			}
+		}
+		local matrix = CMatrix(aMatrixOutput, m_iRows, m_iColumns).Transpose();
+		return matrix.Division(Determinant());
+	}
+	function Transpose()
+	{
+		local aTransposeMatrix = [];
+		for (local i = 0; i < m_iColumns; i++)
+			aTransposeMatrix.push(GetColumnArray(i));
+			
+		return CMatrix(aTransposeMatrix, m_iColumns, m_iRows);
+	}
+	function ToVector()
+	{
+		if (m_iRows == 3)
+			return Vector(m_aMatrix[0][0], m_aMatrix[1][0], m_aMatrix[2][0]);
+
+		if (m_iRows == 4)
+			return Vector4D(m_aMatrix[0][0], m_aMatrix[1][0], m_aMatrix[2][0], m_aMatrix[3][0]);
+
+		if (m_iRows == 2)
+			return Vector2D(m_aMatrix[0][0], m_aMatrix[1][0]);
+	}
+	function GetMinor(iRow, iColumn)
+	{
+		if (m_iRows == 1 && m_iColumns == 1)
+			return CMatrix([[1.0]], 1, 1);
+
+		local idx = 0;
+		local aMinor = [];
+		for (local i = 0; i < m_iRows; i++)
+		{
+			if (i == iRow)
+				continue;
+
+			aMinor.push(GetRowArray(i));
+			for (local j = 0; j < m_iColumns; j++)
+			{
+				if (j == iColumn)
+				{
+					aMinor[idx].remove(j);
+					break;
+				}
+			}
+			idx++;
+		}
+		return CMatrix(aMinor, m_iRows - 1, m_iColumns - 1);
+	}
+	function GetColumnArray(iColumn)
+	{
+		local aColumn = [];
+		for (local i = 0; i < m_iRows; i++)
+			aColumn.push(m_aMatrix[i][iColumn]);
+
+		return aColumn;
+	}
+	function GetRowArray(iRow)
+	{
+		return clone m_aMatrix[iRow];
+	}
+	function GetCellValue(iRow, iColumn)
+	{
+		return m_aMatrix[iRow][iColumn];
+	}
+	function IsSquare()
+	{
+		return m_iRows == m_iColumns;
+	}
+	function GetMatrix()
+	{
+		return m_aMatrix;
+	}
+	function GetRows()
+	{
+		return m_iRows;
+	}
+	function GetColumns()
+	{
+		return m_iColumns;
+	}
+	function _tostring()
+	{
+		local str = "Matrix: (";
+		foreach (idx, arr in m_aMatrix)
+		{
+			foreach (_idx, val in arr)
+			{
+				if (m_iColumns - 1 != _idx)
+				{
+					str += val + ", ";
+					continue;
+				}
+				str += val;
+			}
+			str += (m_iRows - 1 == idx ? ")" : "; ");
+		}
+		return str;
+	}
+	function _mul(arg)
+	{
+		if (typeof arg == "integer" || typeof arg == "float")
+		{
+			return Scale(arg);
+		}
+		return Multiply(arg);
+	}
+	function _div(arg)
+	{
+		return Division(arg);
+	}
+	function _unm()
+	{
+		return Inverse();
+	}
+	function _add(arg)
+	{
+		return Add(arg);
+	}
+	function _sub(arg)
+	{
+		return Add(arg.Scale(-1));
+	}
+	m_aMatrix = null;
+	m_iColumns = 0;
+	m_iRows = 0;
+	m_Determinant = 0;
+}
+
 /** Class Entity
 * Signature: class CEntity(CBaseEntity entity)
 */
@@ -446,18 +721,13 @@ class CEntity
 	}
 	function IsEntityValid()
 	{
-		if (!hEntity)
+		if (!hEntity || !hEntity.IsValid())
 		{
-			printl("[Class Entity] Entity not found");
+			printl("[Class Entity] Invalid entity");
 			return false;
 		}
 		return true;
 	}
-	function GetClassType()
-	{
-		return m_sClassType;
-	}
-	static m_sClassType = "CEntity";
 	hEntity = null;
 	entidx = null;
 }
@@ -493,11 +763,6 @@ class CLoopFunction
 	{
 		return m_flInterval;
 	}
-	function GetClassType()
-	{
-		return m_sClassType;
-	}
-	static m_sClassType = "CLoopFunction";
 	m_sFunctionName = null;
 	m_aInputVars = null;
 	m_sTimerName = null;
@@ -529,11 +794,6 @@ class COnTickFunction
 	{
 		return m_sFunctionName;
 	}
-	function GetClassType()
-	{
-		return m_sClassType;
-	}
-	static m_sClassType = "COnTickFunction";
 	m_sFunctionName = null;
 	m_aInputVars = null;
 }
@@ -567,11 +827,6 @@ class CChatCommand
 	{
 		return m_bInputValue;
 	}
-	function GetClassType()
-	{
-		return m_sClassType;
-	}
-	static m_sClassType = "CChatCommand";
 	m_sCommand = null;
 	m_Function = null;
 	m_bInputPlayerHandle = false;
@@ -611,11 +866,6 @@ class CButtonListener
 	{
 		return m_iPressType;
 	}
-	function GetClassType()
-	{
-		return m_sClassType;
-	}
-	static m_sClassType = "CButtonListener";
 	m_sFunctionName = null;
 	m_nButtons = null;
 	m_iPressType = null;
@@ -651,11 +901,6 @@ class CUserCommand
 	{
 		return m_sCommand;
 	}
-	function GetClassType()
-	{
-		return m_sClassType;
-	}
-	static m_sClassType = "CUserCommand";
 	m_sCommand = null;
 	m_Function = null;
 	m_bInputValue = false;
@@ -719,11 +964,6 @@ class CConVar
 			printf("[Class ConVar] A function has been unhooked for cvar '%s'", m_sName);
 		}
 	}
-	function GetClassType()
-	{
-		return m_sClassType;
-	}
-	static m_sClassType = "CConVar";
 	m_sName = null;
 	m_sValue = null;
 	m_sDefaultValue = null;
@@ -765,11 +1005,6 @@ class CTimer
 	{
 		return m_sIdentifier;
 	}
-	function GetClassType()
-	{
-		return m_sClassType;
-	}
-	static m_sClassType = "CTimer";
 	m_sIdentifier = null;
 	m_flCallTime = null;
 	m_Function = null;
@@ -782,7 +1017,7 @@ class CTimer
 
 g_hClientCommand <- SpawnEntityFromTable("point_clientcommand", {});
 g_hServerCommand <- SpawnEntityFromTable("point_servercommand", {});
-g_hBroadcastClientCommand <- SpawnEntityFromTable("point_servercommand", {});
+g_hBroadcastClientCommand <- SpawnEntityFromTable("point_broadcastclientcommand", {});
 
 /*===============================*\
 *           Tables              *
@@ -900,6 +1135,15 @@ function Mark(vecPos, flDuration = 5.0, vecMins = Vector(2, 2, 2), vecMaxs = Vec
 function Line(vecStart, vecEnd, flTime = 5.0, iRed = 232, iGreen = 0, iBlue = 232)
 {
 	DebugDrawLine(vecStart, vecEnd, iRed, iGreen, iBlue, false, flTime);
+}
+
+/** Create a matrix
+* Signature: CMatrix Matrix(any args)
+*/
+
+function Matrix(...)
+{
+	return CMatrix(vargv);
 }
 
 /** Is a function exist
@@ -1068,8 +1312,8 @@ function EncodeString(sInput = null, bStringToFile = false, sFileName = null)
 	local sOutput = "";
 	foreach (symbol in sInput)
 	{
-		symbol = format("/x%X", symbol)
-		if (symbol.find("FFFFFF") != null) symbol = "/x" + symbol.slice(8);
+		symbol = format("x%X", symbol)
+		if (symbol.find("FFFFFF") != null) symbol = "x" + symbol.slice(8);
 		sOutput += symbol;
 	}
 	if (bStringToFile)
@@ -1098,11 +1342,11 @@ function DecodeString(sInput = null, bFileToString = false, sFileName = null)
 		if (typeof sFileName != "string") return;
 		sInput = compilestring("return " + FileToString(sFileName))();
 	}
-	local aInput = split(sInput, "/x");
+	local aInput = split(sInput, "x");
 	local sOutput = "";
 	foreach (symbol in aInput)
 	{
-		if (symbol != "/x")
+		if (symbol != "x")
 			sOutput += compilestring("return 0x" + symbol)().tochar().tostring();
 	}
 	return sOutput;
@@ -1314,19 +1558,19 @@ function DoTraceLine(vecStart = Vector(), vecDir = Vector(), tr_type = eTrace.Ty
 {
 	local ent;
 	local vecEnd = vecStart + vecDir.Scale(tr_dist);
-	local hTrace =
+	local tTrace =
 	{
 		start = vecStart
 		end = vecEnd
 		ignore = tr_ignore
 		mask = tr_mask
 	}
-	TraceLine(hTrace);
+	TraceLine(tTrace);
 	if (tr_type == eTrace.Type_Hit)
-		if (hTrace.hit)
-			if ((ent = hTrace.enthit).GetEntityIndex() != 0)
+		if (tTrace.hit)
+			if ((ent = tTrace.enthit).GetEntityIndex() != 0)
 				return ent;
-	if (tr_type == eTrace.Type_Pos) return hTrace.pos;
+	if (tr_type == eTrace.Type_Pos) return tTrace.pos;
 	return null;
 }
 
@@ -1929,19 +2173,19 @@ function InjectAdditionalClassMethods()
 		local ent;
 		local vecStart = this.EyePosition();
 		local vecEnd = vecStart + this.EyeAngles().Forward().Scale(tr_dist);
-		local hTrace =
+		local tTrace =
 		{
 			start = vecStart
 			end = vecEnd
 			ignore = this
 			mask = tr_mask
 		}
-		TraceLine(hTrace);
+		TraceLine(tTrace);
 		if (tr_type == eTrace.Type_Hit)
-			if (hTrace.hit)
-				if ((ent = hTrace.enthit).GetEntityIndex() != 0)
+			if (tTrace.hit)
+				if ((ent = tTrace.enthit).GetEntityIndex() != 0)
 					return ent;
-		if (tr_type == eTrace.Type_Pos) return hTrace.pos;
+		if (tr_type == eTrace.Type_Pos) return tTrace.pos;
 		return null;
 	}
 }
@@ -2570,19 +2814,13 @@ function OnTickCall()
 {
 	local idx = 0;
 	local length = g_aTimers.len();
-	local bException, bProhibitChangeHook, NewValue, CurrentValue, cvar, min, max;
 	for (local i = 0; i < g_aOnTickFunctions.len(); i++)
 	{
-		bException = false;
 		try {
 			g_aOnTickFunctions[i].GetCallingFunction().acall(g_aOnTickFunctions[i].GetInputVariables());
 		}
 		catch (error) {
 			printl("[OnTickFunction Watchdog] An error has occurred, on tick function has been removed");
-			bException = true;
-		}
-		if (bException)
-		{
 			g_aOnTickFunctions.remove(i);
 			i--;
 		}
@@ -2599,18 +2837,21 @@ function OnTickCall()
 			}
 			g_aTimers.remove(idx);
 			length--;
+			continue;
 		}
-		else idx++;
+		idx++;
 	}
 	idx = 0;
-	while (idx < g_aConVars.len())
+	length = g_aConVars.len();
+	while (idx < length)
 	{
-		cvar = g_aConVars[idx];
+		local cvar = g_aConVars[idx];
 		if (cvar.GetCurrentValue() != cvar.GetValue())
 		{
-			bProhibitChangeHook = false;
-			NewValue = cvar.GetValue();
-			CurrentValue = cvar.GetCurrentValue();
+			local min, max;
+			local bProhibitChangeHook = false;
+			local NewValue = cvar.GetValue();
+			local CurrentValue = cvar.GetCurrentValue();
 			try {
 				switch (cvar.m_sType)
 				{
@@ -2897,8 +3138,17 @@ function Math::NormalizeAngle(flAngle)
 *   Additional Vector Methods   *
 \*===============================*/
 
+/** Overload of '/' operator
+* Example: Vector(1, 2, 3) / 2
+*/
+
+function Vector::_div(value)
+{
+	return this.Scale(1.0 / value);
+}
+
 /** Returns true if a vector is zero
-* Signature: Vector *instance.IsZero(float tolerance)
+* Signature: Vector Vector.IsZero(float tolerance)
 */
 
 function Vector::IsZero(flTolerance = 0.001)
@@ -2908,7 +3158,7 @@ function Vector::IsZero(flTolerance = 0.001)
 }
 
 /** Returns a normalized vector
-* Signature: Vector *instance.Normalize()
+* Signature: Vector Vector.Normalize()
 */
 
 function Vector::Normalize()
@@ -2917,7 +3167,7 @@ function Vector::Normalize()
 }
 
 /** Returns the projection of vector from direction
-* Signature: Vector *instance.Project(Vector vector)
+* Signature: Vector Vector.Project(Vector vector)
 */
 
 function Vector::Project(vector)
@@ -2927,7 +3177,7 @@ function Vector::Project(vector)
 }
 
 /** Returns the rejection of vector from direction
-* Signature: Vector *instance.Reject(Vector vector)
+* Signature: Vector Vector.Reject(Vector vector)
 */
 
 function Vector::Reject(vector)
@@ -2937,10 +3187,10 @@ function Vector::Reject(vector)
 }
 
 /** Returns the reflection of a vector off a surface that have the specified normal
-* Signature: Vector VMath.Reflect(Vector vector_a, Vector vector_b, bool projectMethod, float factor)
+* Signature: Vector VMath.Reflect(Vector vector_a, Vector vector_b, float factor, bool projectMethod)
 */
 
-function VMath::Reflect(vector_a, vector_b, bProjectMethod = true, flFactor = 2.0)
+function VMath::Reflect(vector_a, vector_b, flFactor = 2.0, bProjectMethod = true)
 {
 	return bProjectMethod ? vector_a - (vector_a.Project(vector_b) * flFactor) : (vector_a.Reject(vector_b) * flFactor) - vector_a;
 }
@@ -3032,6 +3282,22 @@ function GetAngleBetweenVectors2(vector_a, vector_b)
 	return asin(vector_a.Cross(vector_b).Length()) * Math.Rad2Deg;
 }
 
+/** Convert the vector to matrix Nx1
+* Signature: CMatrix VectorToMatrix(Vector vec)
+*/
+
+function VectorToMatrix(vec)
+{
+	if (vec instanceof Vector)
+		return CMatrix([ [vec.x], [vec.y], [vec.z] ], 3, 1);
+
+	if (vec instanceof Vector4D)
+		return CMatrix([ [vec.x], [vec.y], [vec.z], [vec.w] ], 4, 1);
+
+	if (vec instanceof Vector2D)
+		return CMatrix([ [vec.x], [vec.y] ], 2, 1);
+}
+
 /** Returns euler angles of the vector
 * Signature: QAngle VectorToQAngle(Vector vector)
 */
@@ -3085,7 +3351,7 @@ function VectorBetween(vector_min, vector_max, vector)
 \*===============================*/
 
 /** Returns the normalized angles of the player's pov
-* Signature: QAngle *instance.Normalize()
+* Signature: QAngle QAngle.Normalize()
 */
 
 function QAngle::Normalize()
@@ -3130,7 +3396,7 @@ function RotateOrientationWithQuaternion(eAngles)
 \*=================================*/
 
 /** Negating the imaginary part
-* Signature: Quaternion *instance.Conjugate()
+* Signature: Quaternion Quaternion.Conjugate()
 */
 
 function Quaternion::Conjugate()
@@ -3139,7 +3405,7 @@ function Quaternion::Conjugate()
 }
 
 /** Inverse a quaternion
-* Signature: Quaternion *instance.Inverse()
+* Signature: Quaternion Quaternion.Inverse()
 */
 
 function Quaternion::Inverse()
@@ -3150,7 +3416,7 @@ function Quaternion::Inverse()
 }
 
 /** Multiply a quaternion by another quaternion
-* Signature: Quaternion *instance.Multiply(Quaternion q)
+* Signature: Quaternion Quaternion.Multiply(Quaternion q)
 */
 
 function Quaternion::Multiply(q)
