@@ -1556,7 +1556,6 @@ function ClientCommandToAll(sCommand = "", flDelay = 0.0)
 
 function DoTraceLine(vecStart = Vector(), vecDir = Vector(), tr_type = eTrace.Type_Hit, tr_dist = eTrace.Distance, tr_mask = eTrace.Mask_Shot, tr_ignore = null)
 {
-	local ent;
 	local vecEnd = vecStart + vecDir.Scale(tr_dist);
 	local tTrace =
 	{
@@ -1565,13 +1564,15 @@ function DoTraceLine(vecStart = Vector(), vecDir = Vector(), tr_type = eTrace.Ty
 		ignore = tr_ignore
 		mask = tr_mask
 	}
+
 	TraceLine(tTrace);
+
 	if (tr_type == eTrace.Type_Hit)
-		if (tTrace.hit)
-			if ((ent = tTrace.enthit).GetEntityIndex() != 0)
-				return ent;
-	if (tr_type == eTrace.Type_Pos) return tTrace.pos;
-	return null;
+		if (tTrace.hit && tTrace.enthit.GetEntityIndex() != 0)
+				return tTrace.enthit;
+
+	if (tr_type == eTrace.Type_Pos)
+		return tTrace.pos;
 }
 
 /*===============================*\
@@ -1814,16 +1815,16 @@ function CEntity::SetAnglesBySteps(eAngles, iSteps, flDeltaTime = 0.01, bSlerp =
 			{
 				flTime += flDeltaTime;
 				eAnglesStart += eAnglesDelta;
-				CreateTimer(flTime, function(hEntity, eAngles){
+				CreateTimer(flTime, function(hEntity, idx, eAngles){
 					if (hEntity.IsValid())
 					{
-						if (g_bAllowChangeCameraAngles[hEntity.GetEntityIndex()])
+						if (g_bAllowChangeCameraAngles[idx])
 						{
 							if (eAngles.y < -180 || eAngles.y > 180) eAngles.y = Math.NormalizeAngle(eAngles.y);
 							TP(hEntity, null, eAngles, null);
 						}
 					}
-				}, hEntity, eAnglesStart);
+				}, hEntity, entidx, eAnglesStart);
 				if (i == iSteps - 1)
 				{
 					CreateTimer(flTime, function(hEntity){
@@ -1838,15 +1839,15 @@ function CEntity::SetAnglesBySteps(eAngles, iSteps, flDeltaTime = 0.01, bSlerp =
 			for (local t = frametime; t < 1.0; t += frametime)
 			{
 				flTime += flDeltaTime;
-				CreateTimer(flTime, function(hEntity, eAngles){
+				CreateTimer(flTime, function(hEntity, idx, eAngles){
 					if (hEntity.IsValid())
 					{
-						if (g_bAllowChangeCameraAngles[hEntity.GetEntityIndex()])
+						if (g_bAllowChangeCameraAngles[idx])
 						{
 							hEntity.SetAngles(eAngles);
 						}
 					}
-				}, hEntity, OrientationLerp(eAnglesStart, eAngles, t, bSlerp, true));
+				}, hEntity, entidx, OrientationLerp(eAnglesStart, eAngles, t, bSlerp, true));
 				if (t + frametime >= 1.0)
 				{
 					CreateTimer(flTime, function(hEntity){
@@ -2011,6 +2012,15 @@ function InjectAdditionalClassMethods()
 		return NetProps.GetPropIntArray(hPlayerManager, "m_listenServerHost", this.GetEntityIndex()) && !NetProps.GetPropInt(hGameRules, "m_bIsDedicatedServer");
 	}
 
+	/** Is player stuck
+	* Signature: bool CTerrorPlayer.IsStuck()
+	*/
+
+	function CTerrorPlayer::IsStuck()
+	{
+		return NetProps.GetPropInt(this, "m_StuckLast") > 0;
+	}
+
 	/** Is a player alive
 	* Signature: bool CTerrorPlayer.IsAlive()
 	*/
@@ -2170,7 +2180,6 @@ function InjectAdditionalClassMethods()
 
 	function CTerrorPlayer::DoTraceLine(tr_type = eTrace.Type_Hit, tr_dist = eTrace.Distance, tr_mask = eTrace.Mask_Shot)
 	{
-		local ent;
 		local vecStart = this.EyePosition();
 		local vecEnd = vecStart + this.EyeAngles().Forward().Scale(tr_dist);
 		local tTrace =
@@ -2180,13 +2189,15 @@ function InjectAdditionalClassMethods()
 			ignore = this
 			mask = tr_mask
 		}
+
 		TraceLine(tTrace);
+
 		if (tr_type == eTrace.Type_Hit)
-			if (tTrace.hit)
-				if ((ent = tTrace.enthit).GetEntityIndex() != 0)
-					return ent;
-		if (tr_type == eTrace.Type_Pos) return tTrace.pos;
-		return null;
+			if (tTrace.hit && tTrace.enthit.GetEntityIndex() != 0)
+					return tTrace.enthit;
+
+		if (tr_type == eTrace.Type_Pos)
+			return tTrace.pos;
 	}
 }
 
