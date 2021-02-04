@@ -469,12 +469,14 @@ class CMatrix
 				local aMatrixOutput = [];
 				local aMatrix = matrix.GetMatrix();
 				local columns = matrix.GetColumns();
+
 				for (local n = 0; n < m_iRows; n++)
 				{
 					aMatrixOutput.push([]);
 					for (local m = 0; m < columns; m++)
 						aMatrixOutput[n].push(0.0);
 				}
+
 				for (local i = 0; i < m_iRows; i++)
 				{
 					for (local j = 0; j < columns; j++)
@@ -485,6 +487,7 @@ class CMatrix
 						}
 					}
 				}
+				
 				return CMatrix(aMatrixOutput, m_iRows, columns);
 			}
 			throw "wrong matrix size";
@@ -568,6 +571,7 @@ class CMatrix
 				aMatrixOutput[i].push(GetMinor(i, j).Determinant() * ((i + j + 2) % 2 ? -1.0 : 1.0));
 			}
 		}
+
 		local matrix = CMatrix(aMatrixOutput, m_iRows, m_iColumns).Transpose();
 		return matrix.Division(Determinant());
 	}
@@ -599,8 +603,7 @@ class CMatrix
 		local aMinor = [];
 		for (local i = 0; i < m_iRows; i++)
 		{
-			if (i == iRow)
-				continue;
+			if (i == iRow) continue;
 
 			aMinor.push(GetRowArray(i));
 			for (local j = 0; j < m_iColumns; j++)
@@ -695,43 +698,6 @@ class CMatrix
 	m_Determinant = 0;
 }
 
-/** Class Entity
-* Signature: class CEntity(CBaseEntity entity)
-*/
-
-class CEntity
-{
-	constructor(ent)
-	{
-		if (typeof ent == "instance")
-		{
-			hEntity = ent;
-			entidx = ent.GetEntityIndex();
-		}
-		else if (typeof ent == "integer")
-		{
-			hEntity = EntIndexToHScript(ent);
-			entidx = ent;
-		}
-		else if (typeof ent == "string")
-		{
-			if (hEntity = Entities.FindByName(null, ent))
-				entidx = hEntity.GetEntityIndex();
-		}
-	}
-	function IsEntityValid()
-	{
-		if (!hEntity || !hEntity.IsValid())
-		{
-			printl("[Class Entity] Invalid entity");
-			return false;
-		}
-		return true;
-	}
-	hEntity = null;
-	entidx = null;
-}
-
 /** Class Loop function
 * Signature: class CLoopFunction(string funcName, float refiretime, any args)
 */
@@ -742,9 +708,11 @@ class CLoopFunction
 	{
 		local aArgs = [this];
 		aArgs.extend(aInputVars);
+
 		m_aInputVars = aArgs;
 		m_sFunctionName = sFunction;
 		m_sTimerName = LF_PREFIX + sFunction.tolower();
+
 		if (flInterval != null) m_flInterval = flInterval;
 	}
 	function GetInputVariables()
@@ -779,6 +747,7 @@ class COnTickFunction
 	{
 		local aArgs = [this];
 		aArgs.extend(aInputVars);
+
 		m_aInputVars = aArgs;
 		m_sFunctionName = sFunction;
 	}
@@ -984,6 +953,7 @@ class CTimer
 	{
 		local aArgs = [this];
 		aArgs.extend(aInputVars);
+
 		m_aInputVars = aArgs;
 		m_sIdentifier = UniqueString();
 		m_Function = Function;
@@ -1156,12 +1126,14 @@ function IsFunctionExist(sFunction)
 	{
 		printl("[IsFunctionExist] Wrong type of variable");
 	}
+
 	local aString = split(sFunction, "(");
+
 	try {
 		foreach (val in aString)
 		{
-			local Function = compilestring("return " + val)();
-			if (typeof Function == "function" || typeof Function == "native function")
+			local func = compilestring("return " + val)();
+			if (typeof func == "function" || typeof func == "native function")
 				return true;
 		}
 		return false;
@@ -1182,6 +1154,7 @@ function AcceptEntityInput(hEntity, sInput, sValue = "", flDelay = 0.0, hActivat
 		printl("[AcceptEntityInput] Entity doesn't exist");
 		return;
 	}
+
 	DoEntFire("!self", sInput.tostring(), sValue.tostring(), flDelay.tofloat(), hActivator, hEntity);
 }
 
@@ -1196,6 +1169,7 @@ function RunScriptCode(sScript, flDelay = 0.0, hActivator = null, hCaller = null
 		printl("[RunScriptCode] Wrong type of variable");
 		return;
 	}
+
 	if (!hCaller) EntFire((hActivator != null ? "!activator" : "worldspawn"), "RunScriptCode", sScript, flDelay, hActivator);
 	else AcceptEntityInput(hCaller, "RunScriptCode", sScript, flDelay, hActivator);
 }
@@ -1211,6 +1185,7 @@ function CallScriptFunction(sFunction, flDelay = 0.0, hActivator = null, hCaller
 		printl("[CallScriptFunction] Wrong type of variable");
 		return;
 	}
+
 	if (!hCaller) EntFire((hActivator != null ? "!activator" : "worldspawn"), "CallScriptFunction", sFunction, flDelay, hActivator);
 	else AcceptEntityInput(hCaller, "CallScriptFunction", sFunction, flDelay, hActivator);
 }
@@ -1219,11 +1194,11 @@ function CallScriptFunction(sFunction, flDelay = 0.0, hActivator = null, hCaller
 * Signature: CTimer CreateTimer(float delay, function callFunction, array args)
 */
 
-function CreateTimer(flDelay, Function, ...)
+function CreateTimer(flDelay, func, ...)
 {
-	if (typeof Function == "function" || typeof Function == "native function")
+	if (typeof func == "function" || typeof func == "native function")
 	{
-		local timer = CTimer(Time() + flDelay, Function, vargv);
+		local timer = CTimer(Time() + flDelay, func, vargv);
 		g_aTimers.push(timer);
 		return timer;
 	}
@@ -1234,11 +1209,11 @@ function CreateTimer(flDelay, Function, ...)
 * Signature: CTimer RunNextTickFunction(function callFunction, array args)
 */
 
-function RunNextTickFunction(Function, ...)
+function RunNextTickFunction(func, ...)
 {
-	if (typeof Function == "function" || typeof Function == "native function")
+	if (typeof func == "function" || typeof func == "native function")
 	{
-		local timer = CTimer(Time() + 0.0334, Function, vargv);
+		local timer = CTimer(Time() + 0.0334, func, vargv);
 		g_aTimers.push(timer);
 		return timer;
 	}
@@ -1258,6 +1233,7 @@ function EmitSound(vecPos, sSound, iRadius = 3000.0)
 		spawnflags = 48
 		health = 100
 	});
+
 	AcceptEntityInput(hEntity, "PlaySound");
 	AcceptEntityInput(hEntity, "Kill");
 }
@@ -1296,9 +1272,11 @@ function CreateInvisibleWall(sName, vecPos, vecMaxs = Vector(64, 64, 128), vecMi
 		initialstate = bEnable.tointeger()
 		blocktype = iType
 	});
+
 	hEntity.__KeyValueFromVector("maxs", vecMaxs);
 	hEntity.__KeyValueFromVector("mins", vecMins);
 	hEntity.ValidateScriptScope();
+
 	return hEntity;
 }
 
@@ -1309,6 +1287,7 @@ function CreateInvisibleWall(sName, vecPos, vecMaxs = Vector(64, 64, 128), vecMi
 function EncodeString(sInput = null, bStringToFile = false, sFileName = null)
 {
 	if (typeof sInput != "string") return;
+
 	local sOutput = "";
 	foreach (symbol in sInput)
 	{
@@ -1316,6 +1295,7 @@ function EncodeString(sInput = null, bStringToFile = false, sFileName = null)
 		if (symbol.find("FFFFFF") != null) symbol = "x" + symbol.slice(8);
 		sOutput += symbol;
 	}
+
 	if (bStringToFile)
 	{
 		if (typeof sFileName != "string") return;
@@ -1323,6 +1303,7 @@ function EncodeString(sInput = null, bStringToFile = false, sFileName = null)
 		sOutput += "\n";
 		return StringToFile(sFileName, sOutput);
 	}
+
 	return sOutput;
 }
 
@@ -1337,18 +1318,21 @@ function DecodeString(sInput = null, bFileToString = false, sFileName = null)
 		if (typeof sInput != "string")
 			return;
 	}
+
 	if (bFileToString)
 	{
 		if (typeof sFileName != "string") return;
 		sInput = compilestring("return " + FileToString(sFileName))();
 	}
+
 	local aInput = split(sInput, "x");
 	local sOutput = "";
+
 	foreach (symbol in aInput)
 	{
-		if (symbol != "x")
-			sOutput += compilestring("return 0x" + symbol)().tochar().tostring();
+		if (symbol != "x") sOutput += compilestring("return 0x" + symbol)().tochar().tostring();
 	}
+
 	return sOutput;
 }
 
@@ -1364,11 +1348,13 @@ function TP(hEntity = null, vecPos = Vector(), eAngles = QAngle(), vecVel = Vect
 		{
 			hEntity.SetOrigin(vecPos);
 		}
+
 		if (eAngles != null)
 		{
 			if (hEntity.IsPlayer()) hEntity.SetForwardVector(bVectorDirection ? eAngles : eAngles.Forward());
 			else hEntity.SetAngles(bVectorDirection ? VectorToQAngle(eAngles) : eAngles);
 		}
+
 		if (vecVel != null)
 		{
 			if (hEntity.IsPlayer()) hEntity.SetVelocity(vecVel);
@@ -1390,20 +1376,24 @@ function ToClock(flTime = 0.0, bMs = true)
 	local hr_dbg = "";
 	local day_dbg = "";
 	local ms_dbg = "";
+
 	if (day >= 1)
 	{
 		hr %= 24;
 		day_dbg = day < 10 ? "0" + day + ":" : day + ":";
 	}
+
 	if (hr >= 1 || day >= 1)
 	{
 		min %= 60;
 		hr_dbg = hr < 10 ? "0" + hr + ":" : hr + ":";
 	}
+
 	if (bMs)
 	{
 		ms_dbg = "," + split(format("%.03f", flTime), ".")[1];
 	}
+
 	return day_dbg + hr_dbg + (min < 10 ? "0" + min : min) + (sec < 10 ? ":0" + sec : ":" + sec) + ms_dbg;
 }
 
@@ -1418,13 +1408,16 @@ function GetAngleBetweenEntities(hEntity = null, hTarget = null, vecCorrection =
 		printl("[GetAngleBetweenEntities] Entity doesn't exist");
 		return;
 	}
+
 	local vecPos = hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin();
 	local _vecPos = hTarget.IsPlayer() ? hTarget.EyePosition() : hTarget.GetOrigin();
+
 	if (bMethod2D)
 	{
 		vecPos.z = 0.0;
 		_vecPos.z = 0.0;
 	}
+
 	return acos(((hEntity.IsPlayer() ? hEntity.EyeAngles() : hEntity.GetAngles()).Forward()).Dot(((_vecPos - vecPos) + vecCorrection).Normalize())) * Math.Rad2Deg;
 }
 
@@ -1447,7 +1440,6 @@ function GetHostPlayer()
 			idx++;
 		}
 	}
-	return null;
 }
 
 /** Collect alive survivors into a table
@@ -1525,8 +1517,10 @@ function SendCommandToBot(iCommand = BOT_CMD_MOVE, hBot = null, hTarget = null, 
 		cmd = iCommand
 		bot = hBot
 	}
+
 	if (hTarget != null) tCommands.rawset("target", hTarget);
 	if (vecPos != null) tCommands.rawset("pos", vecPos);
+
 	CommandABot(tCommands);
 }
 
@@ -1616,7 +1610,6 @@ function FindConVar(sName)
 		if (cvar.GetName() == sName)
 			return cvar;
 	}
-	return null;
 }
 
 /** Get a ConVar string
@@ -1727,37 +1720,34 @@ function GetConVarFloat(convar)
 }
 
 /*===============================*\
-*     Entity Class Functions    *
+*    Entity Related Functions    *
 \*===============================*/
 
 /** Attach an entity
-* Signature: void CEntity(CBaseEntity entity).AttachEntity(handle target, string attachment, float delay)
+* Signature: void AttachEntity(handle entity, handle target, string attachment, float delay)
 */
 
-function CEntity::AttachEntity(hTarget, sAttachment = null, flDelay = 0.0)
+function AttachEntity(hEntity, hTarget, sAttachment = null, flDelay = 0.0)
 {
-	if (!IsEntityValid()) return;
 	AcceptEntityInput(hTarget, "SetParent", "!activator", flDelay, hEntity);
 	if (sAttachment != null) AcceptEntityInput(hTarget, "SetParentAttachment", sAttachment, flDelay, hEntity);
 }
 
 /** Remove an attachment
-* Signature: void CEntity(CBaseEntity entity).RemoveAttachment(handle target, float delay)
+* Signature: void RemoveAttachment(handle entity, handle target, float delay)
 */
 
-function CEntity::RemoveAttachment(hTarget, flDelay = 0.0)
+function RemoveAttachment(hEntity, hTarget, flDelay = 0.0)
 {
-	if (!IsEntityValid()) return;
 	AcceptEntityInput(hTarget, "ClearParent", "", flDelay, hEntity);
 }
 
-/** Get a distance between two entities
-* Signature: float CEntity(CBaseEntity entity).GetDistance(handle target, bool bSquared, bool bMethod2D)
+/** Get distance between two entities
+* Signature: float GetDistance(handle entity, handle target, bool bSquared, bool bMethod2D)
 */
 
-function CEntity::GetDistance(hTarget, bSquared = false, bMethod2D = false)
+function GetDistance(hEntity, hTarget, bSquared = false, bMethod2D = false)
 {
-	if (!IsEntityValid()) return;
 	local flDistance;
 	if (bSquared) flDistance = bMethod2D ? (hEntity.GetOrigin() - hTarget.GetOrigin()).Length2DSqr() : (hEntity.GetOrigin() - hTarget.GetOrigin()).LengthSqr();
 	else flDistance = bMethod2D ? (hEntity.GetOrigin() - hTarget.GetOrigin()).Length2D() : (hEntity.GetOrigin() - hTarget.GetOrigin()).Length();
@@ -1765,37 +1755,36 @@ function CEntity::GetDistance(hTarget, bSquared = false, bMethod2D = false)
 }
 
 /** Ignite an entity
-* Signature: void CEntity(CBaseEntity player).Ignite(handle attacker, float interval)
+* Signature: void Ignite(handle entity, handle attacker, float interval)
 */
 
-function CEntity::Ignite(hAttacker = null, flInterval = 5.0)
+function Ignite(hEntity, hAttacker = null, flInterval = 5.0)
 {
-	if (!IsEntityValid()) return;
-	if (hEntity.IsPlayer() || hEntity.GetClassname() == "witch") hEntity.TakeDamage(0.01, DMG_BURN, !hAttacker ? hEntity : hAttacker);
-	else AcceptEntityInput(hEntity, "IgniteLifeTime", flInterval.tostring());
-	if (hEntity.IsPlayer())
+	if (hEntity.IsPlayer() || hEntity.GetClassname() == "witch")
 	{
-		if (!hEntity.IsSurvivor())
-		{
-			CEntity(hEntity).SetScriptScopeVar("extinguish_time", Time() + flInterval);
-			CreateTimer(flInterval, function(hPlayer){
-				if (hPlayer.IsValid())
-				{
-					if (hPlayer.IsOnFire() & CEntity(hPlayer).GetScriptScopeVar("extinguish_time") <= Time())
-						hPlayer.Extinguish();
-				}
-			}, hEntity);
-		}
+		hEntity.TakeDamage(0.01, DMG_BURN, !hAttacker ? hEntity : hAttacker);
+	}
+	else
+	{
+		AcceptEntityInput(hEntity, "IgniteLifeTime", flInterval.tostring());
+	}
+	
+	if (hEntity.IsPlayer() && !hEntity.IsSurvivor())
+	{
+		SetScriptScopeVar(hEntity, "extinguish_time", Time() + flInterval);
+		CreateTimer(flInterval, function(hPlayer){
+			if (hPlayer.IsValid() && hPlayer.IsOnFire() & GetScriptScopeVar(hPlayer, "extinguish_time") <= Time())
+				hPlayer.Extinguish();
+		}, hEntity);
 	}
 }
 
 /** Set entity angles by steps
-* Signature: void CEntity(CBaseEntity entity).SetAnglesBySteps(QAngle angles, int steps, float deltaTime, bool sphericalLerp)
+* Signature: void SetAnglesBySteps(handle entity, QAngle angles, int steps, float deltaTime, bool sphericalLerp)
 */
 
-function CEntity::SetAnglesBySteps(eAngles, iSteps, flDeltaTime = 0.01, bSlerp = true)
+function SetAnglesBySteps(hEntity, eAngles, iSteps, flDeltaTime = 0.01, bSlerp = true)
 {
-	if (!IsEntityValid()) return;
 	local eAnglesStart = hEntity.IsPlayer() ? hEntity.EyeAngles() : hEntity.GetAngles();
 	if ((Vector(eAngles.x, eAngles.y, eAngles.z) - Vector(eAnglesStart.x, eAnglesStart.y, eAnglesStart.z)).LengthSqr() >= 1)
 	{
@@ -1807,24 +1796,26 @@ function CEntity::SetAnglesBySteps(eAngles, iSteps, flDeltaTime = 0.01, bSlerp =
 			if (eAnglesStart.y < -180 || eAnglesStart.y > 180) eAnglesStart.y = Math.NormalizeAngle(eAnglesStart.y);
 			if (eAngles.y < 0) eAngles.y += 360;
 			if (eAnglesStart.y < 0) eAnglesStart.y += 360;
+
 			local eAnglesDifference = eAngles - eAnglesStart;
+
 			if (eAngles.y + fabs(360 - eAnglesStart.y) < fabs(eAngles.y - eAnglesStart.y)) eAnglesDifference.y = eAngles.y + fabs(360 - eAnglesStart.y);
 			else if (eAnglesStart.y + fabs(360 - eAngles.y) < fabs(eAnglesStart.y - eAngles.y)) eAnglesDifference.y = -(eAnglesStart.y + fabs(360 - eAngles.y));
+
 			local eAnglesDelta = QAngle(eAnglesDifference.x / iSteps, eAnglesDifference.y / iSteps, 0);
 			for (local i = 0; i < iSteps; i++)
 			{
 				flTime += flDeltaTime;
 				eAnglesStart += eAnglesDelta;
+
 				CreateTimer(flTime, function(hEntity, idx, eAngles){
-					if (hEntity.IsValid())
+					if (hEntity.IsValid() && g_bAllowChangeCameraAngles[idx])
 					{
-						if (g_bAllowChangeCameraAngles[idx])
-						{
-							if (eAngles.y < -180 || eAngles.y > 180) eAngles.y = Math.NormalizeAngle(eAngles.y);
-							TP(hEntity, null, eAngles, null);
-						}
+						if (eAngles.y < -180 || eAngles.y > 180) eAngles.y = Math.NormalizeAngle(eAngles.y);
+						TP(hEntity, null, eAngles, null);
 					}
-				}, hEntity, entidx, eAnglesStart);
+				}, hEntity, hEntity.GetEntityIndex(), eAnglesStart);
+
 				if (i == iSteps - 1)
 				{
 					CreateTimer(flTime, function(hEntity){
@@ -1839,15 +1830,14 @@ function CEntity::SetAnglesBySteps(eAngles, iSteps, flDeltaTime = 0.01, bSlerp =
 			for (local t = frametime; t < 1.0; t += frametime)
 			{
 				flTime += flDeltaTime;
+
 				CreateTimer(flTime, function(hEntity, idx, eAngles){
-					if (hEntity.IsValid())
+					if (hEntity.IsValid() && g_bAllowChangeCameraAngles[idx])
 					{
-						if (g_bAllowChangeCameraAngles[idx])
-						{
-							hEntity.SetAngles(eAngles);
-						}
+						hEntity.SetAngles(eAngles);
 					}
-				}, hEntity, entidx, OrientationLerp(eAnglesStart, eAngles, t, bSlerp, true));
+				}, hEntity, hEntity.GetEntityIndex(), OrientationLerp(eAnglesStart, eAngles, t, bSlerp, true));
+
 				if (t + frametime >= 1.0)
 				{
 					CreateTimer(flTime, function(hEntity){
@@ -1860,12 +1850,11 @@ function CEntity::SetAnglesBySteps(eAngles, iSteps, flDeltaTime = 0.01, bSlerp =
 }
 
 /** Set an entity angles to another entity
-* Signature: void CEntity(CBaseEntity entity).SetAnglesToEntity(handle entity, Vector vecCorrection, bool bUseBodyPosition, float bodyPositionPercent)
+* Signature: void SetAnglesToEntity(handle entity, handle target, Vector vecCorrection, bool bUseBodyPosition, float bodyPositionPercent)
 */
 
-function CEntity::SetAnglesToEntity(hTarget, vecCorrection = Vector(), bUseBodyPosition = false, flBodyPositionPercent = 0.5)
+function SetAnglesToEntity(hEntity, hTarget, vecCorrection = Vector(), bUseBodyPosition = false, flBodyPositionPercent = 0.5)
 {
-	if (!IsEntityValid()) return;
 	local vecDir = vecCorrection;
 	if (hTarget.IsPlayer()) vecDir += (bUseBodyPosition ? hTarget.GetBodyPosition(flBodyPositionPercent) : hTarget.EyePosition()) - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
 	else vecDir += hTarget.GetOrigin() - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
@@ -1873,92 +1862,84 @@ function CEntity::SetAnglesToEntity(hTarget, vecCorrection = Vector(), bUseBodyP
 }
 
 /** Get an entity angles to another entity
-* Signature: QAngle CEntity(CBaseEntity entity).GetAnglesToEntity(handle entity, Vector vecCorrection, bool bUseBodyPosition, float bodyPositionPercent)
+* Signature: QAngle GetAnglesToEntity(handle entity, handle target, Vector vecCorrection, bool bUseBodyPosition, float bodyPositionPercent)
 */
 
-function CEntity::GetAnglesToEntity(hTarget, vecCorrection = Vector(), bUseBodyPosition = false, flBodyPositionPercent = 0.5)
+function GetAnglesToEntity(hEntity, hTarget, vecCorrection = Vector(), bUseBodyPosition = false, flBodyPositionPercent = 0.5)
 {
-	if (!IsEntityValid()) return;
 	local vecDir = vecCorrection;
 	if (hTarget.IsPlayer()) vecDir += (bUseBodyPosition ? hTarget.GetBodyPosition(flBodyPositionPercent) : hTarget.EyePosition()) - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
 	else vecDir += hTarget.GetOrigin() - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
 	return VectorToQAngle(vecDir);
 }
 
-/** Get a position to ground
-* Signature: Vector CEntity(CBaseEntity entity).GetPositionToGround()
+/** Get position to ground
+* Signature: Vector GetPositionToGround(handle entity)
 */
 
-function CEntity::GetPositionToGround()
+function GetPositionToGround(hEntity)
 {
-	if (!IsEntityValid()) return;
 	return DoTraceLine(hEntity.GetOrigin(), Vector(0, 0, -1), eTrace.Type_Pos, eTrace.Distance, eTrace.Mask_Shot, hEntity);
 }
 
-/** Get a distance to ground
-* Signature: float CEntity(CBaseEntity entity).GetDistanceToGround()
+/** Get distance to ground
+* Signature: float GetDistanceToGround(handle entity)
 */
 
-function CEntity::GetDistanceToGround()
+function GetDistanceToGround(hEntity)
 {
-	if (!IsEntityValid()) return;
 	return (hEntity.GetOrigin() - DoTraceLine(hEntity.GetOrigin(), Vector(0, 0, -1), eTrace.Type_Pos, eTrace.Distance, eTrace.Mask_Shot, hEntity)).Length();
 }
 
-/** Get entity's script scope table
-* Signature: table CEntity(CBaseEntity entity).GetScriptScope()
+/** Get entity's script scope
+* Signature: table GetScriptScope(handle entity)
 */
 
-function CEntity::GetScriptScope()
+function GetScriptScope(hEntity)
 {
-	if (!IsEntityValid()) return;
 	hEntity.ValidateScriptScope();
 	return hEntity.GetScriptScope();
 }
 
 /** Get entity's script scope variable
-* Signature: any CEntity(CBaseEntity entity).GetScriptScopeVar(any key)
+* Signature: any GetScriptScopeVar(handle entity, string key)
 */
 
-function CEntity::GetScriptScopeVar(key)
+function GetScriptScopeVar(hEntity, key)
 {
-	if (!IsEntityValid()) return;
 	hEntity.ValidateScriptScope();
-	if (CEntity(hEntity).KeyInScriptScope(key)) return CEntity(hEntity).GetScriptScope()[key];
+	if (KeyInScriptScope(hEntity, key)) return hEntity.GetScriptScope()[key];
 }
 
 /** Set entity's script scope variable
-* Signature: void CEntity(CBaseEntity entity).SetScriptScopeVar(any key, any variable)
+* Signature: void SetScriptScopeVar(handle entity, string key, any variable)
 */
 
-function CEntity::SetScriptScopeVar(key, var)
+function SetScriptScopeVar(hEntity, key, var)
 {
-	if (!IsEntityValid()) return;
 	hEntity.ValidateScriptScope();
 	hEntity.GetScriptScope()[key] <- var;
 }
 
 /** If a key in entity's script scope
-* Signature: bool CEntity(CBaseEntity entity).KeyInScriptScope(any key)
+* Signature: bool KeyInScriptScope(handle entity, string key)
 */
 
-function CEntity::KeyInScriptScope(key)
+function KeyInScriptScope(hEntity, key)
 {
-	if (!IsEntityValid()) return;
 	hEntity.ValidateScriptScope();
-	if (key in CEntity(hEntity).GetScriptScope()) return true;
+	if (key in hEntity.GetScriptScope()) return true;
 	return false;
 }
 
 /** Remove entity's script scope key
-* Signature: void CEntity(CBaseEntity entity).RemoveScriptScopeKey(any key)
+* Signature: void RemoveScriptScopeKey(handle entity, string key)
 */
 
-function CEntity::RemoveScriptScopeKey(key)
+function RemoveScriptScopeKey(hEntity, key)
 {
-	if (!IsEntityValid()) return;
 	hEntity.ValidateScriptScope();
-	if (CEntity(hEntity).KeyInScriptScope(key)) delete CEntity(hEntity).GetScriptScope()[key];
+	if (KeyInScriptScope(hEntity, key)) delete hEntity.GetScriptScope()[key];
 }
 
 /*===============================*\
@@ -1980,23 +1961,23 @@ function InjectAdditionalClassMethods()
 	}
 
 	/** Press a button
-	* Signature: void CTerrorPlayer.PressButton(int button, float releasedelay)
+	* Signature: void CTerrorPlayer.SendInput(int button, float releasedelay)
 	*/
 
-	function CTerrorPlayer::PressButton(iButton, flReleaseDelay = 0.01)
+	function CTerrorPlayer::SendInput(iButton, flReleaseDelay = 0.01)
 	{
-		if (CEntity(this).KeyInScriptScope(format("is_bitmask_%d_forced", iButton)))
-			if (CEntity(this).GetScriptScopeVar(format("is_bitmask_%d_forced", iButton)))
+		if (KeyInScriptScope(this, format("is_bitmask_%d_forced", iButton)))
+			if (GetScriptScopeVar(this, format("is_bitmask_%d_forced", iButton)))
 				return;
 
 		NetProps.SetPropInt(this, "m_afButtonForced", NetProps.GetPropInt(this, "m_afButtonForced") | iButton);
-		CEntity(this).SetScriptScopeVar(format("is_bitmask_%d_forced", iButton), true);
+		SetScriptScopeVar(this, format("is_bitmask_%d_forced", iButton), true);
 
 		CreateTimer(flReleaseDelay, function(hPlayer, iButton){
 			if (hPlayer.IsValid())
 			{
 				NetProps.SetPropInt(hPlayer, "m_afButtonForced", NetProps.GetPropInt(hPlayer, "m_afButtonForced") & ~iButton)
-				CEntity(hPlayer).SetScriptScopeVar(format("is_bitmask_%d_forced", iButton), false);
+				SetScriptScopeVar(hPlayer, format("is_bitmask_%d_forced", iButton), false);
 			}
 		}, this, iButton);
 	}
@@ -2008,8 +1989,11 @@ function InjectAdditionalClassMethods()
 	function CTerrorPlayer::IsHost()
 	{
 		local hGameRules, hPlayerManager;
-		if (!(hGameRules = Entities.FindByClassname(null, "terror_gamerules")) || !(hPlayerManager = Entities.FindByClassname(null, "terror_player_manager"))) return false;
-		return NetProps.GetPropIntArray(hPlayerManager, "m_listenServerHost", this.GetEntityIndex()) && !NetProps.GetPropInt(hGameRules, "m_bIsDedicatedServer");
+		if ((hGameRules = Entities.FindByClassname(null, "terror_gamerules")) && (hPlayerManager = Entities.FindByClassname(null, "terror_player_manager")))
+		{
+			return NetProps.GetPropIntArray(hPlayerManager, "m_listenServerHost", this.GetEntityIndex()) && !NetProps.GetPropInt(hGameRules, "m_bIsDedicatedServer");
+		}
+		return false;
 	}
 
 	/** Is player stuck
@@ -2027,8 +2011,7 @@ function InjectAdditionalClassMethods()
 
 	function CTerrorPlayer::IsAlive()
 	{
-		if (this.IsDead() || this.IsDying()) return false;
-		return true;
+		return !(this.IsDead() || this.IsDying());
 	}
 
 	/** Kill a player
@@ -2066,13 +2049,13 @@ function InjectAdditionalClassMethods()
 	function CTerrorPlayer::IsAttackedBySI()
 	{
 		if (this.IsSurvivor())
-			if (NetProps.GetPropEntity(this, "m_pounceAttacker") ||
-				NetProps.GetPropEntity(this, "m_jockeyAttacker") ||
-				NetProps.GetPropEntity(this, "m_pummelAttacker") ||
-				NetProps.GetPropEntity(this, "m_carryAttacker") ||
-				NetProps.GetPropEntity(this, "m_tongueOwner"))
-				return true;
-			return false;
+		{
+			return NetProps.GetPropEntity(this, "m_pounceAttacker") ||
+				   NetProps.GetPropEntity(this, "m_jockeyAttacker") ||
+				   NetProps.GetPropEntity(this, "m_pummelAttacker") ||
+				   NetProps.GetPropEntity(this, "m_carryAttacker") ||
+				   NetProps.GetPropEntity(this, "m_tongueOwner");
+		}
 		printl("[IsAttackedBySI] Player is not a survivor");
 	}
 
@@ -2089,7 +2072,7 @@ function InjectAdditionalClassMethods()
 			else if (NetProps.GetPropEntity(this, "m_pummelAttacker")) return NetProps.GetPropEntity(this, "m_pummelAttacker");
 			else if (NetProps.GetPropEntity(this, "m_carryAttacker")) return NetProps.GetPropEntity(this, "m_carryAttacker");
 			else if (NetProps.GetPropEntity(this, "m_tongueOwner")) return NetProps.GetPropEntity(this, "m_tongueOwner");
-			return null;
+			return;
 		}
 		printl("[IsAttackedBySI] Player is not a survivor");
 	}
@@ -2107,7 +2090,7 @@ function InjectAdditionalClassMethods()
 			else if (NetProps.GetPropEntity(this, "m_pummelVictim")) return NetProps.GetPropEntity(this, "m_pummelVictim");
 			else if (NetProps.GetPropEntity(this, "m_carryVictim")) return NetProps.GetPropEntity(this, "m_carryVictim");
 			else if (NetProps.GetPropEntity(this, "m_tongueVictim")) return NetProps.GetPropEntity(this, "m_tongueVictim");
-			return null;
+			return;
 		}
 		printl("[IsAttackedBySI] Player is not an infected");
 	}
@@ -2122,16 +2105,15 @@ function InjectAdditionalClassMethods()
 		{
 			switch (this.GetZombieType())
 			{
-				case ZOMBIE_SMOKER:
-				case ZOMBIE_BOOMER:
-				case ZOMBIE_HUNTER:
-				case ZOMBIE_SPITTER:
-				case ZOMBIE_JOCKEY:
-				case ZOMBIE_CHARGER:
-					return true;
-				default:
-					return false;
+			case ZOMBIE_SMOKER:
+			case ZOMBIE_BOOMER:
+			case ZOMBIE_HUNTER:
+			case ZOMBIE_SPITTER:
+			case ZOMBIE_JOCKEY:
+			case ZOMBIE_CHARGER:
+				return true;
 			}
+			return false;
 		}
 		printl("[IsSpecialInfected] Player is not an infected");
 	}
@@ -2211,46 +2193,50 @@ function InjectAdditionalClassMethods()
 * Signature: void HookEvent(string event, function callFunction, table scope)
 */
 
-function HookEvent(sEvent = null, Function = null, tScope = null)
+function HookEvent(sEvent = null, func = null, tScope = null)
 {
-	if (typeof sEvent != "string" || typeof Function != "function")
+	if (typeof sEvent != "string" || !(typeof func == "function" || typeof func == "native function"))
 	{
 		printl("[HookEvent] Wrong type of variable");
 		return;
 	}
+
 	if (!(sEvent in g_tCallBackEvents))
 	{
 		g_tCallBackEvents[sEvent] <- {};
 		g_tCallBackEvents[sEvent]["CallBack_Functions"] <- [];
 		g_tCallBackEvents[sEvent]["OnGameEvent_" + sEvent] <- function(tParams)
 		{
-			foreach (func in g_tCallBackEvents[sEvent]["CallBack_Functions"])
+			foreach (__func in g_tCallBackEvents[sEvent]["CallBack_Functions"])
 			{
 				if ("userid" in tParams) tParams["_player"] <- GetPlayerFromUserID(tParams.userid);
 				if ("victim" in tParams) tParams["_victim"] <- GetPlayerFromUserID(tParams.victim);
 				if ("entityid" in tParams) tParams["_entity"] <- EntIndexToHScript(tParams.entityid);
 				if ("subject" in tParams) tParams["_subject"] <- GetPlayerFromUserID(tParams.subject);
 				if ("attacker" in tParams) tParams["_attacker"] <- GetPlayerFromUserID(tParams.attacker);
-				func(tParams);
+				__func(tParams);
 			}
 		}
 	}
-	if (Function != null)
+
+	if (func != null)
 	{
 		local sFunction;
 		foreach (key, val in (tScope != null ? tScope : getroottable()))
 		{
-			if (val == Function)
+			if (val == func)
 			{
 				sFunction = key;
 				break;
 			}
 		}
+
 		if (!sFunction)
 		{
 			printl("[HookEvent] The specified function was not found in the certain scope");
 			return;
 		}
+
 		foreach (func in g_tCallBackEvents[sEvent]["CallBack_Functions"])
 		{
 			if (func == sFunction)
@@ -2259,14 +2245,16 @@ function HookEvent(sEvent = null, Function = null, tScope = null)
 				return;
 			}
 		}
+
 		printf("[HookEvent] Event hook function '%s' has been registered for the game event '%s'", sFunction, sEvent);
-		g_tCallBackEvents[sEvent]["CallBack_Functions"].push(Function);
+		g_tCallBackEvents[sEvent]["CallBack_Functions"].push(func);
 	}
 	else
 	{
 		printl("[HookEvent] Invalid function specified");
 		return;
 	}
+
 	__CollectEventCallbacks(g_tCallBackEvents[sEvent], "OnGameEvent_", "GameEventCallbacks", RegisterScriptGameEventListener);
 }
 
@@ -2274,46 +2262,50 @@ function HookEvent(sEvent = null, Function = null, tScope = null)
 * Signature: void UnhookEvent(string event, function callFunction, table scope)
 */
 
-function UnhookEvent(sEvent = null, Function = null, tScope = null)
+function UnhookEvent(sEvent = null, func = null, tScope = null)
 {
 	if (typeof sEvent != "string")
 	{
 		printl("[UnhookEvent] Wrong type of variable");
 		return;
 	}
+
 	if (sEvent in g_tCallBackEvents)
 	{
-		if (Function != null)
+		if (func != null)
 		{
-			if (typeof Function != "function")
+			if (typeof func == "function" || typeof func == "native function")
 			{
-				printl("[UnhookEvent] Wrong type of variable");
-				return;
-			}
-			local sFunction;
-			foreach (key, val in (tScope != null ? tScope : getroottable()))
-			{
-				if (val == Function)
+				local sFunction;
+				foreach (key, val in (tScope != null ? tScope : getroottable()))
 				{
-					sFunction = key;
-					break;
+					if (val == func)
+					{
+						sFunction = key;
+						break;
+					}
 				}
-			}
-			if (!sFunction)
-			{
-				printl("[UnhookEvent] The specified function was not found in the certain scope");
-				return;
-			}
-			foreach (idx, func in g_tCallBackEvents[sEvent]["CallBack_Functions"])
-			{
-				if (func == sFunction)
+
+				if (!sFunction)
 				{
-					printf("[UnhookEvent] Function '%s' has been unhooked for the game event '%s'", sFunction, sEvent);
-					g_tCallBackEvents[sEvent]["CallBack_Functions"].remove(idx);
+					printl("[UnhookEvent] The specified function was not found in the certain scope");
 					return;
 				}
+
+				foreach (idx, __func in g_tCallBackEvents[sEvent]["CallBack_Functions"])
+				{
+					if (__func == func)
+					{
+						printf("[UnhookEvent] Function '%s' has been unhooked for the game event '%s'", sFunction, sEvent);
+						g_tCallBackEvents[sEvent]["CallBack_Functions"].remove(idx);
+						return;
+					}
+				}
+
+				printf("[UnhookEvent] Hook function '%s' is not registered", sFunction);
+				return;
 			}
-			printf("[UnhookEvent] Hook function '%s' is not registered", sFunction);
+			printl("[UnhookEvent] Wrong type of variable");
 			return;
 		}
 		else
@@ -2323,6 +2315,7 @@ function UnhookEvent(sEvent = null, Function = null, tScope = null)
 			return;
 		}
 	}
+
 	printf("[UnhookEvent] Event '%s' is not registered", sEvent); 
 }
 
@@ -2349,11 +2342,13 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 		printl("[RegisterLoopFunction] Wrong type of variable");
 		return;
 	}
+
 	if (!IsFunctionExist(sFunction))
 	{
 		printf("[RegisterLoopFunction] Function '%s' doesn't exist", sFunction);
 		return;
 	}
+
 	foreach (func in g_aLoopFunctions)
 	{
 		if (func.GetFunctionName() == sFunction)
@@ -2364,20 +2359,22 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 			return;
 		}
 	}
+
 	local sName = LF_PREFIX + sFunction.tolower();
 	local hTimer = Entities.FindByName(null, sName);
+
 	if (!hTimer)
 	{
 		local __loop_func = CLoopFunction(sFunction, flRefireTime, vargv);
 		hTimer = SpawnEntityFromTable("logic_script", {targetname = sName});
 
-		CEntity(hTimer).SetScriptScopeVar("__loop_params", {
+		SetScriptScopeVar(hTimer, "__loop_params", {
 			__func = sFunction
 			__with_args = vargv.len() > 0
 			__args = __loop_func.GetInputVariables()
 		});
 
-		CEntity(hTimer).SetScriptScopeVar("Think", function(){
+		SetScriptScopeVar(hTimer, "Think", function(){
 			if (this["__loop_params"].__with_args)
 			{
 				CreateTimer(flRefireTime, function(sFunction, aInputVars){
@@ -2414,6 +2411,7 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 	else
 	{
 		hTimer.Kill();
+
 		if (vargv.len() > 0)
 		{
 			local aVars = [this, sFunction, flRefireTime];
@@ -2421,6 +2419,7 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 			RegisterLoopFunction.acall(aVars);
 			return;
 		}
+
 		RegisterLoopFunction(sFunction, flRefireTime);
 	}
 }
@@ -2436,11 +2435,13 @@ function RemoveLoopFunction(sFunction, ...)
 		printl("[RemoveLoopFunction] Wrong type of variable");
 		return;
 	}
+
 	if (!IsFunctionExist(sFunction))
 	{
 		printf("[RemoveLoopFunction] Function '%s' doesn't exist", sFunction);
 		return;
 	}
+
 	foreach (idx, func in g_aLoopFunctions)
 	{
 		if (func.GetFunctionName() == sFunction)
@@ -2449,16 +2450,20 @@ function RemoveLoopFunction(sFunction, ...)
 			{
 				local aVars = clone func.GetInputVariables();
 				aVars.remove(0);
+
 				if (IsArraysEqual(aVars, vargv))
 				{
 					local sVars = "";
 					local hTimer = Entities.FindByName(null, func.GetTimerName());
+
 					if (hTimer) hTimer.Kill();
+
 					foreach (idx, var in vargv)
 					{
 						if (vargv.len() - 1 == idx) sVars += var;
 						else sVars += var + ", ";
 					}
+
 					printf("[RemoveLoopFunction] Function '%s' with input variables: '%s' has been removed", sFunction, sVars);
 					g_aLoopFunctions.remove(idx);
 					return;
@@ -2467,7 +2472,9 @@ function RemoveLoopFunction(sFunction, ...)
 			else
 			{
 				local hTimer = Entities.FindByName(null, func.GetTimerName());
+
 				if (hTimer) hTimer.Kill();
+
 				printf("[RemoveLoopFunction] Function '%s' has been removed", sFunction);
 				g_aLoopFunctions.remove(idx);
 				return;
@@ -2477,14 +2484,19 @@ function RemoveLoopFunction(sFunction, ...)
 	if (vargv.len() > 0)
 	{
 		local sVars = "";
+
 		foreach (idx, var in vargv)
 		{
 			if (vargv.len() - 1 == idx) sVars += var;
 			else sVars += var + ", ";
 		}
+
 		printf("[RemoveLoopFunction] Function '%s' with input variables: '%s' is not registered", sFunction, sVars);
 	}
-	else printf("[RemoveLoopFunction] Function '%s' is not registered", sFunction);
+	else
+	{
+		printf("[RemoveLoopFunction] Function '%s' is not registered", sFunction);
+	}
 }
 
 /** Is loop function registered
@@ -2498,21 +2510,25 @@ function IsLoopFunctionRegistered(sFunction, ...)
 		printl("[IsLoopFunctionRegistered] Wrong type of variable");
 		return;
 	}
+
 	if (!IsFunctionExist(sFunction))
 	{
 		printf("[IsLoopFunctionRegistered] Function '%s' doesn't exist", sFunction);
 		return;
 	}
+
 	foreach (idx, func in g_aLoopFunctions)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
 			local aVars = clone func.GetInputVariables();
 			aVars.remove(0);
+
 			if (IsArraysEqual(aVars, vargv))
 				return true;
 		}
 	}
+
 	return false;
 }
 
@@ -2529,31 +2545,45 @@ function RegisterOnTickFunction(sFunction, ...)
 		printl("[RegisterOnTickFunction] Wrong type of variable");
 		return;
 	}
+
 	if (!IsFunctionExist(sFunction))
 	{
 		printl("[RegisterOnTickFunction] The specified function doesn't exist");
 		return;
 	}
+
 	foreach (func in g_aOnTickFunctions)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
 			local aVars = clone func.GetInputVariables();
 			aVars.remove(0);
-			if (IsArraysEqual(aVars, vargv)) return printf("[RegisterOnTickFunction] Function '%s' already registered", sFunction);
+
+			if (IsArraysEqual(aVars, vargv))
+			{
+				printf("[RegisterOnTickFunction] Function '%s' already registered", sFunction);
+				return;
+			}
 		}
 	}
+
 	if (vargv.len() > 0)
 	{
 		local sVars = "";
+
 		foreach (idx, var in vargv)
 		{
 			if (vargv.len() - 1 == idx) sVars += var;
 			else sVars += var + ", ";
 		}
+
 		printf("[RegisterOnTickFunction] Function '%s' with input variables: '%s' has been registered", sFunction, sVars);
 	}
-	else printf("[RegisterOnTickFunction] Function '%s' has been registered", sFunction);
+	else
+	{
+		printf("[RegisterOnTickFunction] Function '%s' has been registered", sFunction);
+	}
+
 	g_aOnTickFunctions.push(COnTickFunction(sFunction, vargv));
 }
 
@@ -2568,11 +2598,13 @@ function RemoveOnTickFunction(sFunction, ...)
 		printl("[RemoveOnTickFunction] Wrong type of variable");
 		return;
 	}
+
 	if (!IsFunctionExist(sFunction))
 	{
 		printl("[RemoveOnTickFunction] The specified function doesn't exist");
 		return;
 	}
+
 	foreach (idx, func in g_aOnTickFunctions)
 	{
 		if (func.GetFunctionName() == sFunction)
@@ -2581,14 +2613,17 @@ function RemoveOnTickFunction(sFunction, ...)
 			{
 				local aVars = clone func.GetInputVariables();
 				aVars.remove(0);
+
 				if (IsArraysEqual(aVars, vargv))
 				{
 					local sVars = "";
+
 					foreach (idx, var in vargv)
 					{
 						if (vargv.len() - 1 == idx) sVars += var;
 						else sVars += var + ", ";
 					}
+
 					printf("[RemoveOnTickFunction] Function '%s' with input variables: '%s' has been removed", sFunction, sVars);
 					g_aOnTickFunctions.remove(idx);
 					return
@@ -2602,17 +2637,23 @@ function RemoveOnTickFunction(sFunction, ...)
 			}
 		}
 	}
+
 	if (vargv.len() > 0)
 	{
 		local sVars = "";
+
 		foreach (idx, var in vargv)
 		{
 			if (vargv.len() - 1 == idx) sVars += var;
 			else sVars += var + ", ";
 		}
+
 		printf("[RemoveOnTickFunction] Function '%s' with input variables: '%s' is not registered", sFunction, sVars);
 	}
-	else printf("[RemoveOnTickFunction] Function '%s' is not registered", sFunction);
+	else
+	{
+		printf("[RemoveOnTickFunction] Function '%s' is not registered", sFunction);
+	}
 }
 
 /** Is on tick function registered
@@ -2626,21 +2667,25 @@ function IsOnTickFunctionRegistered(sFunction, ...)
 		printl("[IsOnTickFunctionRegistered] Wrong type of variable");
 		return;
 	}
+
 	if (!IsFunctionExist(sFunction))
 	{
 		printl("[IsOnTickFunctionRegistered] The specified function doesn't exist");
 		return;
 	}
+
 	foreach (idx, func in g_aOnTickFunctions)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
 			local aVars = clone func.GetInputVariables();
 			aVars.remove(0);
+
 			if (IsArraysEqual(aVars, vargv))
 				return true;
 		}
 	}
+
 	return false;
 }
 
@@ -2650,26 +2695,29 @@ function IsOnTickFunctionRegistered(sFunction, ...)
 * Signature: CChatCommand RegisterChatCommand(string command, function callFunction, bool bInputPlayerHandle, bool bInputValue)
 */
 
-function RegisterChatCommand(sCommand = null, Function = null, bInputPlayerHandle = false, bInputValue = false)
+function RegisterChatCommand(sCommand = null, func = null, bInputPlayerHandle = false, bInputValue = false)
 {
-	if (typeof sCommand  != "string" || typeof Function != "function" || typeof bInputPlayerHandle != "bool" || typeof bInputValue != "bool")
+	if (typeof sCommand == "string" && typeof func == "function" && typeof bInputPlayerHandle == "bool" && typeof bInputValue == "bool")
 	{
-		printl("[RegisterChatCommand] Wrong type of variable");
+		sCommand = sCommand.tolower();
+
+		local ChatCommand = CChatCommand(sCommand, func, bInputPlayerHandle, bInputValue);
+		foreach (idx, command in g_aChatCommands)
+		{
+			if (sCommand == command.GetCommand())
+			{
+				g_aChatCommands[idx] = ChatCommand;
+				printf("[RegisterChatCommand] Already registered, but chat command '%s' has been replaced by an existing one", sCommand);
+				return;
+			}
+		}
+
+		printf("[RegisterChatCommand] Chat command '%s' has been registered", sCommand);
+		g_aChatCommands.push(ChatCommand);
+
 		return;
 	}
-	sCommand = sCommand.tolower();
-	local ChatCommand = CChatCommand(sCommand, Function, bInputPlayerHandle, bInputValue);
-	foreach (idx, command in g_aChatCommands)
-	{
-		if (sCommand == command.GetCommand())
-		{
-			g_aChatCommands[idx] = ChatCommand;
-			printf("[RegisterChatCommand] Already registered, but chat command '%s' has been replaced by an existing one", sCommand);
-			return;
-		}
-	}
-	printf("[RegisterChatCommand] Chat command '%s' has been registered", sCommand);
-	g_aChatCommands.push(ChatCommand);
+	printl("[RegisterChatCommand] Wrong type of variable");
 }
 
 /** Remove chat command
@@ -2683,6 +2731,7 @@ function RemoveChatCommand(sCommand = null)
 		printl("[RemoveChatCommand] Wrong type of variable");
 		return;
 	}
+
 	sCommand = sCommand.tolower();
 	foreach (idx, command in g_aChatCommands)
 	{
@@ -2693,6 +2742,7 @@ function RemoveChatCommand(sCommand = null)
 			return;
 		}
 	}
+
 	printf("[RemoveChatCommand] Chat command '%s' is not registered", sCommand);
 }
 
@@ -2704,29 +2754,29 @@ function RemoveChatCommand(sCommand = null)
 
 function RegisterButtonListener(iButton = null, sFunction = null, iType = eButtonType.Pressed, iTeam = eTeam.Everyone)
 {
-	if (typeof iButton != "integer" || typeof sFunction != "string" || typeof iTeam != "integer" || typeof iType != "integer")
+	if (typeof iButton == "integer" && typeof sFunction == "string" && typeof iTeam == "integer" && typeof iType == "integer")
 	{
-		printl("[RegisterButtonListener] Wrong type of variable");
-		return;
-	}
-	if (eButtonType.Pressed < iType && iType > eButtonType.Hold || eTeam.Everyone < iTeam && iTeam > eTeam.Infected)
-	{
-		printl("[RegisterButtonListener] Invalid button type or team");
-		return;
-	}
-	foreach (button in g_aButtonsListener)
-	{
-		if (button.GetButton() == iButton)
+		if (eButtonType.Pressed < iType && iType > eButtonType.Hold || eTeam.Everyone < iTeam && iTeam > eTeam.Infected)
 		{
-			if (button.GetFunction() == sFunction)
+			printl("[RegisterButtonListener] Invalid button type or team");
+			return;
+		}
+
+		foreach (button in g_aButtonsListener)
+		{
+			if (button.GetButton() == iButton && button.GetFunction() == sFunction)
 			{
 				printf("[RegisterButtonListener] Button '%d' with callback function '%s' already registered", iButton, sFunction);
 				return;
 			}
 		}
+
+		printf("[RegisterButtonListener] Button '%d' with callback function '%s' has been registered", iButton, sFunction);
+		g_aButtonsListener.push(CButtonListener(iButton, sFunction, iType, iTeam));
+
+		return;
 	}
-	printf("[RegisterButtonListener] Button '%d' with callback function '%s' has been registered", iButton, sFunction);
-	g_aButtonsListener.push(CButtonListener(iButton, sFunction, iType, iTeam));
+	printl("[RegisterButtonListener] Wrong type of variable");
 }
 
 /** Remove registered button or bound callback function
@@ -2740,35 +2790,38 @@ function RemoveButtonListener(iButton = null, sFunction = null)
 		printl("[RemoveButtonListener] Wrong type of variable");
 		return;
 	}
+
 	foreach (idx, button in g_aButtonsListener)
 	{
 		if (button.GetButton() == iButton)
 		{
-			if (sFunction != null)
+			if (sFunction != null && button.GetFunction() == sFunction)
 			{
-				if (button.GetFunction() == sFunction)
-				{
-					printf("[RemoveButtonListener] Callback function '%d' for button '%d' has been removed", sFunction, iButton);
-					g_aButtonsListener.remove(idx);
-					return;
-				}
+				printf("[RemoveButtonListener] Callback function '%d' for button '%d' has been removed", sFunction, iButton);
+				g_aButtonsListener.remove(idx);
+				return;
 			}
+
 			local shift = 0;
 			local aButtons = [];
+
 			for (local i = 0; i < g_aButtonsListener.len(); i++)
 			{
 				if (g_aButtonsListener[i].GetButton() == iButton)
 					aButtons.push(i);
 			}
+
 			for (local j = 0; j < aButtons.len(); j++)
 			{
 				g_aButtonsListener.remove(aButtons[j] - shift);
 				shift++;
 			}
+
 			printf("[RemoveButtonListener] Button '%d' has been removed", iButton);
 			return;
 		}
 	}
+
 	printf("[RemoveButtonListener] Button '%d' is not registered", iButton);
 }
 
@@ -2776,24 +2829,26 @@ function RemoveButtonListener(iButton = null, sFunction = null)
 * Signature: CUserCommand RegisterUserCommand(string command, function callFunction, bool bInputValue, bool bInputPlayerHandle)
 */
 
-function RegisterUserCommand(sCommand = null, Function = null, bInputValue = false, bInputPlayerHandle = true)
+function RegisterUserCommand(sCommand = null, func = null, bInputValue = false, bInputPlayerHandle = true)
 {
-	if (typeof sCommand != "string" || typeof Function != "function" || typeof bInputValue != "bool" || typeof bInputPlayerHandle != "bool")
+	if (typeof sCommand == "string" && typeof func == "function" && typeof bInputValue == "bool" && typeof bInputPlayerHandle == "bool")
 	{
-		printl("[RegisterUserCommand] Wrong type of variable");
+		sCommand = sCommand.tolower();
+		foreach (usercmd in g_aUserCommands)
+		{
+			if (usercmd.GetCommand() == sCommand)
+			{
+				printf("[RegisterUserCommand] User command '%s' already registered", sCommand);
+				return;
+			}
+		}
+
+		printf("[RegisterUserCommand] User command '%s' has been registered", sCommand);
+		g_aUserCommands.push(CUserCommand(sCommand, func, bInputValue, bInputPlayerHandle));
+
 		return;
 	}
-	sCommand = sCommand.tolower();
-	foreach (usercmd in g_aUserCommands)
-	{
-		if (usercmd.GetCommand() == sCommand)
-		{
-			printf("[RegisterUserCommand] User command '%s' already registered", sCommand);
-			return;
-		}
-	}
-	printf("[RegisterUserCommand] User command '%s' has been registered", sCommand);
-	g_aUserCommands.push(CUserCommand(sCommand, Function, bInputValue, bInputPlayerHandle));
+	printl("[RegisterUserCommand] Wrong type of variable");
 }
 
 /** Remove user command
@@ -2807,15 +2862,18 @@ function RemoveUserCommand(sCommand = null)
 		printl("[RemoveUserCommand] Wrong type of variable");
 		return;
 	}
+
 	sCommand = sCommand.tolower();
 	foreach (idx, usercmd in g_aUserCommands)
 	{
 		if (usercmd.GetCommand() == sCommand)
 		{
 			printf("[RemoveUserCommand] User command '%s' has been removed", sCommand);
-			return g_aUserCommands.remove(idx);
+			g_aUserCommands.remove(idx);
+			return;
 		}
 	}
+
 	printf("[RemoveUserCommand] User command '%s' is not registered", sCommand);
 }
 
@@ -2825,6 +2883,7 @@ function OnTickCall()
 {
 	local idx = 0;
 	local length = g_aTimers.len();
+
 	for (local i = 0; i < g_aOnTickFunctions.len(); i++)
 	{
 		try {
@@ -2836,6 +2895,7 @@ function OnTickCall()
 			i--;
 		}
 	}
+
 	while (idx < length)
 	{
 		if (g_aTimers[idx].GetCallTime() <= Time())
@@ -2843,17 +2903,20 @@ function OnTickCall()
 			try {
 				g_aTimers[idx].GetCallingFunction().acall(g_aTimers[idx].GetInputVariables());
 			}
-			catch (error) {
+			catch (error){
 				printl("[Timer Watchdog] An error has occurred, calling task has been removed");
 			}
+
 			g_aTimers.remove(idx);
 			length--;
 			continue;
 		}
 		idx++;
 	}
+
 	idx = 0;
 	length = g_aConVars.len();
+
 	while (idx < length)
 	{
 		local cvar = g_aConVars[idx];
@@ -2863,66 +2926,66 @@ function OnTickCall()
 			local bProhibitChangeHook = false;
 			local NewValue = cvar.GetValue();
 			local CurrentValue = cvar.GetCurrentValue();
+
 			try {
 				switch (cvar.m_sType)
 				{
-					case "integer":
+				case "integer":
+					NewValue = NewValue.tointeger();
+					CurrentValue = CurrentValue.tointeger();
+					if (cvar.m_flMinValue != null && cvar.m_flMaxValue != null)
 					{
-						NewValue = NewValue.tointeger();
-						CurrentValue = CurrentValue.tointeger();
-						if (cvar.m_flMinValue != null && cvar.m_flMaxValue != null)
-						{
-							min = cvar.m_flMinValue.tointeger();
-							max = cvar.m_flMaxValue.tointeger();
-							if (CurrentValue < min || CurrentValue > max)
-								bProhibitChangeHook = true;
-							NewValue = Math.Clamp(NewValue, min, max);
-						}
-						else if (cvar.m_flMinValue != null && cvar.m_flMaxValue == null)
-						{
-							min = cvar.m_flMinValue.tointeger();
-							if (CurrentValue < min) bProhibitChangeHook = true;
-							if (NewValue < min) NewValue = min;
-						}
-						else if (cvar.m_flMinValue == null && cvar.m_flMaxValue != null)
-						{
-							max = cvar.m_flMaxValue.tointeger();
-							if (CurrentValue > max) bProhibitChangeHook = true;
-							if (NewValue > max) NewValue = max;
-						}
-						break;
+						min = cvar.m_flMinValue.tointeger();
+						max = cvar.m_flMaxValue.tointeger();
+						if (CurrentValue < min || CurrentValue > max)
+							bProhibitChangeHook = true;
+						NewValue = Math.Clamp(NewValue, min, max);
 					}
-					case "float":
+					else if (cvar.m_flMinValue != null && cvar.m_flMaxValue == null)
 					{
-						min = cvar.m_flMinValue;
-						max = cvar.m_flMaxValue;
-						NewValue = NewValue.tofloat();
-						CurrentValue = CurrentValue.tofloat();
-						if (cvar.m_flMinValue != null && cvar.m_flMaxValue != null)
-						{
-							if (CurrentValue < min || CurrentValue > max) bProhibitChangeHook = true;
-							NewValue = Math.Clamp(NewValue, min, max);
-						}
-						else if (cvar.m_flMinValue != null && cvar.m_flMaxValue == null)
-						{
-							if (CurrentValue < min) bProhibitChangeHook = true;
-							if (NewValue < min) NewValue = min;
-						}
-						else if (cvar.m_flMinValue == null && cvar.m_flMaxValue != null)
-						{
-							if (CurrentValue > max) bProhibitChangeHook = true;
-							if (NewValue > max) NewValue = max;
-						}
-						break;
+						min = cvar.m_flMinValue.tointeger();
+						if (CurrentValue < min) bProhibitChangeHook = true;
+						if (NewValue < min) NewValue = min;
 					}
+					else if (cvar.m_flMinValue == null && cvar.m_flMaxValue != null)
+					{
+						max = cvar.m_flMaxValue.tointeger();
+						if (CurrentValue > max) bProhibitChangeHook = true;
+						if (NewValue > max) NewValue = max;
+					}
+					break;
+
+				case "float":
+					min = cvar.m_flMinValue;
+					max = cvar.m_flMaxValue;
+					NewValue = NewValue.tofloat();
+					CurrentValue = CurrentValue.tofloat();
+					if (cvar.m_flMinValue != null && cvar.m_flMaxValue != null)
+					{
+						if (CurrentValue < min || CurrentValue > max) bProhibitChangeHook = true;
+						NewValue = Math.Clamp(NewValue, min, max);
+					}
+					else if (cvar.m_flMinValue != null && cvar.m_flMaxValue == null)
+					{
+						if (CurrentValue < min) bProhibitChangeHook = true;
+						if (NewValue < min) NewValue = min;
+					}
+					else if (cvar.m_flMinValue == null && cvar.m_flMaxValue != null)
+					{
+						if (CurrentValue > max) bProhibitChangeHook = true;
+						if (NewValue > max) NewValue = max;
+					}
+					break;
 				}
 			}
 			catch (error) {
 				cvar.SetValue(CurrentValue);
 				continue;
 			}
+
 			cvar.SetValue(NewValue);
 			cvar.m_sValue = NewValue.tostring();
+
 			if (cvar.m_bChangeHook && !bProhibitChangeHook && NewValue != CurrentValue)
 			{
 				cvar.m_ChangeHookFunction(cvar, CurrentValue, NewValue)
@@ -2937,8 +3000,8 @@ function OnRoundStart(tParams)
 	if ("OnGameplayStart" in getroottable())
 		OnGameplayStart();
 
-	if ("OnGameplayStart_PostSpawn" in getroottable())
-		CreateTimer(0.01, OnGameplayStart_PostSpawn);
+	if ("OnGameplayStart_Post" in getroottable())
+		CreateTimer(0.01, OnGameplayStart_Post);
 }
 
 function AnalyzeCommand(objCommand, sArgs, hPlayer, sSeparator)
@@ -2948,6 +3011,7 @@ function AnalyzeCommand(objCommand, sArgs, hPlayer, sSeparator)
 	local Function = objCommand.GetCallingFunction();
 	local bInputHandle = objCommand.GetInputPlayerHandle();
 	local bInputValue = objCommand.GetInputValue();
+
 	if (bInputValue)
 	{
 		local aArgsTemp = split(sArgs, sSeparator);
@@ -2961,10 +3025,12 @@ function AnalyzeCommand(objCommand, sArgs, hPlayer, sSeparator)
 		}
 		if (!sValue) sValue = CMD_EMPTY_ARGUMENT;
 	}
+
 	if (sValue != CMD_EMPTY_ARGUMENT && sValue != null) sValue = sValue.tolower();
 	if (bInputHandle && !bInputValue) aArgs.extend([hPlayer]);
 	else if (!bInputHandle && bInputValue) aArgs.extend([sValue]);
 	else if (bInputHandle && bInputValue) aArgs.extend([hPlayer, sValue]);
+
 	Function.acall(aArgs);
 }
 
@@ -2976,6 +3042,7 @@ function OnPlayerSay(tParams)
 		local sText = tParams.text.tolower();
 		local sCommand = split(sText, " ")[0];
 		local sValue, aArgs, Function, bInputHandle, bInputValue, aArgsTemp;
+
 		foreach (command in g_aChatCommands)
 		{
 			if (sCommand == command.GetCommand())
@@ -2991,9 +3058,11 @@ function UserConsoleCommand(hPlayer, sArgs)
 	if (g_aUserCommands.len() > 0 && sArgs)
 	{
 		sArgs = sArgs.tolower();
+
 		local aArgs = split(sArgs, ",");
 		local sCommand = aArgs[0];
 		local sValue, aArgs, Function, bInputHandle, bInputValue, aArgsTemp;
+
 		foreach (command in g_aUserCommands)
 		{
 			if (sCommand == command.GetCommand())
@@ -3027,9 +3096,11 @@ function CheckButtons(hPlayer, button)
 	local buttons;
 	local button_type = button.GetType();
 	local idx = hPlayer.GetEntityIndex();
+
 	if (button_type == eButtonType.Pressed) buttons = NetProps.GetPropInt(hPlayer, "m_afButtonPressed");
 	else if (button_type == eButtonType.Released) buttons = NetProps.GetPropInt(hPlayer, "m_afButtonReleased");
 	else buttons = NetProps.GetPropInt(hPlayer, "m_nButtons");
+
 	if (buttons & button.GetButton()) button.GetCallingFunction()(hPlayer);
 }
 
@@ -3041,8 +3112,7 @@ function InjectAdditionalClassMethods_Think()
 		InjectAdditionalClassMethods();
 		RemoveOnTickFunction("InjectAdditionalClassMethods_Think");
 		printl("[InjectAdditionalClassMethods] Successfully injected");
-		if ("AdditionalClassMethodsInjected" in getroottable())
-			::AdditionalClassMethodsInjected();
+		if ("AdditionalClassMethodsInjected" in getroottable()) ::AdditionalClassMethodsInjected();
 		break;
 	}
 }
@@ -3139,7 +3209,6 @@ function Math::FLerp(x, x_start, x_end, y_start, y_end)
 
 function Math::NormalizeAngle(flAngle)
 {
-	if (flAngle >= -180.0 && flAngle <= 180.0) return flAngle;
 	while (flAngle < -180.0) flAngle += 360.0;
 	while (flAngle > 180.0) flAngle -= 360.0;
 	return flAngle;
@@ -3254,9 +3323,12 @@ function VMath::Left(eAngles)
 	local flPitch = eAngles.x * Math.Deg2Rad;
 	local flYaw = eAngles.y * Math.Deg2Rad;
 	local flRoll = eAngles.z * Math.Deg2Rad;
+
 	local flSinRoll, flSinPitch, flSinYaw, flCosRoll, flCosPitch, flCosYaw;
+
 	flSinRoll = sin(flRoll); flSinPitch = sin(flPitch); flSinYaw = sin(flYaw);
 	flCosRoll = cos(flRoll); flCosPitch = cos(flPitch); flCosYaw = cos(flYaw);
+
 	return Vector(-1 * flSinRoll * flSinPitch * flCosYaw + -1 * flCosRoll * -flSinYaw, -1 * flSinRoll * flSinPitch * flSinYaw + -1 * flCosRoll * flCosYaw, -1 * flSinRoll * flCosPitch);
 }
 
@@ -3269,9 +3341,12 @@ function VMath::Up(eAngles)
 	local flPitch = eAngles.x * Math.Deg2Rad;
 	local flYaw = eAngles.y * Math.Deg2Rad;
 	local flRoll = eAngles.z * Math.Deg2Rad;
+
 	local flSinRoll, flSinPitch, flSinYaw, flCosRoll, flCosPitch, flCosYaw;
+
 	flSinRoll = sin(flRoll); flSinPitch = sin(flPitch); flSinYaw = sin(flYaw);
 	flCosRoll = cos(flRoll); flCosPitch = cos(flPitch); flCosYaw = cos(flYaw);
+	
 	return Vector(flCosRoll * flSinPitch * flCosYaw + -flSinRoll * -flSinYaw, flCosRoll * flSinPitch * flSinYaw + -flSinRoll * flCosYaw, flCosRoll * flCosPitch);
 }
 
@@ -3316,9 +3391,12 @@ function VectorToMatrix(vec)
 function VectorToQAngle(vector)
 {
 	if (vector.IsZero(0.0)) return QAngle(0, 0, 0);
+
 	local flPitch = -(atan(vector.z / vector.Length2D()) * Math.Rad2Deg);
 	local flYaw = atan(vector.y / vector.x) * Math.Rad2Deg;
+
 	if (vector.x < 0) flYaw += 180;
+
 	return QAngle(flPitch, Math.IsNaN(flYaw) ? 0 : flYaw, 0);
 }
 
@@ -3330,12 +3408,15 @@ function VectorToQAngle2(vecDirection)
 {
 	local flPitch = asin(vecDirection.z);
 	local flYaw = asin(vecDirection.y / cos(flPitch)) * Math.Rad2Deg;
+
 	flPitch = -flPitch * Math.Rad2Deg;
+
 	if (vecDirection.x < 0)
 	{
 		flYaw *= -1;
 		flYaw -= 180;
 	}
+
 	return VMath.NormalizeQAngle(QAngle(flPitch, flYaw, 0));
 }
 
@@ -3397,8 +3478,10 @@ function RotateOrientationWithQuaternion(eAngles)
 	local qYaw = QuaternionRotation(Vector(0, 0, 1), Math.Deg2Rad * eAngles.y);
 	local qPitch = QuaternionRotation(Vector(0, -1, 0), Math.Deg2Rad * eAngles.x);
 	local qRoll = QuaternionRotation(Vector(1, 0, 0), Math.Deg2Rad * eAngles.z);
+
 	eAngles = qYaw.Multiply(qPitch).Multiply(qRoll).Invert().ToQAngle();
 	eAngles.y *= -1;
+	
 	return eAngles;
 }
 
@@ -3421,7 +3504,7 @@ function Quaternion::Conjugate()
 
 function Quaternion::Inverse()
 {
-	local q = q.Conjugate();
+	local q = this.Conjugate();
 	local norm = x * x + y * y + z * z + w * w;
 	return Quaternion(q.x / norm, q.y / norm, q.z / norm, q.w / norm);
 }
