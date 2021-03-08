@@ -2797,7 +2797,7 @@ function RemoveButtonListener(iButton = null, sFunction = null)
 		{
 			if (sFunction != null && button.GetFunction() == sFunction)
 			{
-				printf("[RemoveButtonListener] Callback function '%d' for button '%d' has been removed", sFunction, iButton);
+				printf("[RemoveButtonListener] Callback function '%s' for button '%d' has been removed", sFunction, iButton);
 				g_aButtonsListener.remove(idx);
 				return;
 			}
