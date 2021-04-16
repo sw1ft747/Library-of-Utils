@@ -1,7 +1,7 @@
 /** Squirrel
 * Library of Utils
 *
-* Copyright (c) 2020 Sw1ft >> http://steamcommunity.com/profiles/76561198397776991
+* Copyright (c) 2019-2021 Sw1ft >> http://steamcommunity.com/profiles/76561198397776991
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,9 @@
 */
 
 /*===============================*\
-*       List of Constants       *
-*                               *
-*     CBaseEntity MoveType      *
+ *       List of Constants       *
+ *                               *
+ *     CBaseEntity MoveType      *
 \*===============================*/
 
 const MOVETYPE_NONE = 0
@@ -42,7 +42,7 @@ const MOVETYPE_OBSERVER = 10
 const MOVETYPE_CUSTOM = 11
 
 /*===============================*\
-*       CBaseEntity Flags       *
+ *       CBaseEntity Flags       *
 \*===============================*/
 
 const FL_ONGROUND = 1
@@ -80,7 +80,7 @@ const FL_FREEZING = 2147483648
 const FL_EP2V_UNKNOWN1 = 2147483648
 
 /*===============================*\
-*     CBasePlayer Buttons       *
+ *     CBasePlayer Buttons       *
 \*===============================*/
 
 const IN_ATTACK = 1
@@ -111,7 +111,7 @@ const IN_GRENADE2 = 16777216
 const IN_ATTACK3 = 33554432
 
 /*===============================*\
-*    CBaseTrigger SpawnFlags    *
+ *    CBaseTrigger SpawnFlags    *
 \*===============================*/
 
 const TR_CLIENTS = 1
@@ -128,7 +128,7 @@ const TR_DISALLOW_BOTS = 4096
 const TR_OFF = 8192
 
 /*===============================*\
-*         Damage Type           *
+ *         Damage Type           *
 \*===============================*/
 
 const DMG_GENERIC = 0
@@ -167,156 +167,160 @@ const DMG_BUCKSHOT = 536870912
 const DMG_HEADSHOT = 1073741824
 
 /*===============================*\
-*     Director Enumerations     *
+ *     Director Enumerations     *
 \*===============================*/
 
 /* AllowBash Flags */
 const ALLOW_BASH_ALL = 0
-const ALLOW_BASH_NONE = 2
 const ALLOW_BASH_PUSHONLY = 1
+const ALLOW_BASH_NONE = 2
 
 /* BOT Sense Flags */
-const BOT_CANT_FEEL = 4
-const BOT_CANT_HEAR = 2
 const BOT_CANT_SEE = 1
+const BOT_CANT_HEAR = 2
+const BOT_CANT_FEEL = 4
 
 /* BOT Command Flags */
 const BOT_CMD_ATTACK = 0
 const BOT_CMD_MOVE = 1
-const BOT_CMD_RESET = 3
 const BOT_CMD_RETREAT = 2
+const BOT_CMD_RESET = 3
 
 /* BotQuery Flags */
 const BOT_QUERY_NOTARGET = 1
 
 /* Infected Flags */
-const INFECTED_FLAG_CANT_FEEL_SURVIVORS = 32768
-const INFECTED_FLAG_CANT_HEAR_SURVIVORS = 16384
 const INFECTED_FLAG_CANT_SEE_SURVIVORS = 8192
+const INFECTED_FLAG_CANT_HEAR_SURVIVORS = 16384
+const INFECTED_FLAG_CANT_FEEL_SURVIVORS = 32768
 
 /* Finales and Scripted Panic Events Flags */
-const FINALE_CUSTOM_CLEAROUT = 11
-const FINALE_CUSTOM_DELAY = 10
-const FINALE_CUSTOM_PANIC = 7
-const FINALE_CUSTOM_SCRIPTED = 9
-const FINALE_CUSTOM_TANK = 8
-const FINALE_FINAL_BOSS = 5
 const FINALE_GAUNTLET_1 = 0
+const FINALE_HORDE_ATTACK_1 = 1
+const FINALE_HALFTIME_BOSS = 2
 const FINALE_GAUNTLET_2 = 3
-const FINALE_GAUNTLET_BOSS = 16
-const FINALE_GAUNTLET_BOSS_INCOMING = 15
-const FINALE_GAUNTLET_ESCAPE = 17
+const FINALE_HORDE_ATTACK_2 = 4
+const FINALE_FINAL_BOSS = 5
+const FINALE_HORDE_ESCAPE = 6
+const FINALE_CUSTOM_PANIC = 7
+const FINALE_CUSTOM_TANK = 8
+const FINALE_CUSTOM_SCRIPTED = 9
+const FINALE_CUSTOM_DELAY = 10
+const FINALE_CUSTOM_CLEAROUT = 11
+const FINALE_GAUNTLET_START = 12
 const FINALE_GAUNTLET_HORDE = 13
 const FINALE_GAUNTLET_HORDE_BONUSTIME = 14
-const FINALE_GAUNTLET_START = 12
-const FINALE_HALFTIME_BOSS = 2
-const FINALE_HORDE_ATTACK_1 = 1
-const FINALE_HORDE_ATTACK_2 = 4
-const FINALE_HORDE_ESCAPE = 6
+const FINALE_GAUNTLET_BOSS_INCOMING = 15
+const FINALE_GAUNTLET_BOSS = 16
+const FINALE_GAUNTLET_ESCAPE = 17
 
 /* Stages Flags */
-const STAGE_CLEAROUT = 4
-const STAGE_DELAY = 2
-const STAGE_ESCAPE = 7
-const STAGE_NONE = 9
 const STAGE_PANIC = 0
-const STAGE_RESULTS = 8
-const STAGE_SETUP = 5
 const STAGE_TANK = 1
+const STAGE_DELAY = 2
+const STAGE_CLEAROUT = 4
+const STAGE_SETUP = 5
+const STAGE_ESCAPE = 7
+const STAGE_RESULTS = 8
+const STAGE_NONE = 9
 
 /* HUD Flags */
-const HUD_FAR_LEFT = 7
-const HUD_FAR_RIGHT = 8
-const HUD_FLAG_ALIGN_CENTER = 512
-const HUD_FLAG_ALIGN_LEFT = 256
-const HUD_FLAG_ALIGN_RIGHT = 768
-const HUD_FLAG_ALLOWNEGTIMER = 128
-const HUD_FLAG_AS_TIME = 16
+const HUD_FLAG_PRESTR = 1
+const HUD_FLAG_POSTSTR = 2
 const HUD_FLAG_BEEP = 4
 const HUD_FLAG_BLINK = 8
+const HUD_FLAG_AS_TIME = 16
 const HUD_FLAG_COUNTDOWN_WARN = 32
 const HUD_FLAG_NOBG = 64
-const HUD_FLAG_NOTVISIBLE = 16384
-const HUD_FLAG_POSTSTR = 2
-const HUD_FLAG_PRESTR = 1
+const HUD_FLAG_ALLOWNEGTIMER = 128
+const HUD_FLAG_ALIGN_LEFT = 256
+const HUD_FLAG_ALIGN_CENTER = 512
+const HUD_FLAG_ALIGN_RIGHT = 768
+const HUD_FLAG_TEAM_SURVIVORS = 1024
 const HUD_FLAG_TEAM_INFECTED = 2048
 const HUD_FLAG_TEAM_MASK = 3072
-const HUD_FLAG_TEAM_SURVIVORS = 1024
-const HUD_LEFT_BOT = 1
+const HUD_FLAG_NOTVISIBLE = 16384
+
 const HUD_LEFT_TOP = 0
-const HUD_MID_BOT = 3
-const HUD_MID_BOX = 9
+const HUD_LEFT_BOT = 1
 const HUD_MID_TOP = 2
-const HUD_RIGHT_BOT = 5
+const HUD_MID_BOT = 3
 const HUD_RIGHT_TOP = 4
+const HUD_RIGHT_BOT = 5
+const HUD_TICKER = 6
+const HUD_FAR_LEFT = 7
+const HUD_FAR_RIGHT = 8
+const HUD_MID_BOX = 9
+const HUD_SCORE_TITLE = 10
 const HUD_SCORE_1 = 11
 const HUD_SCORE_2 = 12
 const HUD_SCORE_3 = 13
 const HUD_SCORE_4 = 14
-const HUD_SCORE_TITLE = 10
-const HUD_SPECIAL_COOLDOWN = 4
-const HUD_SPECIAL_MAPNAME = 6
-const HUD_SPECIAL_MODENAME = 7
-const HUD_SPECIAL_ROUNDTIME = 5
+
 const HUD_SPECIAL_TIMER0 = 0
 const HUD_SPECIAL_TIMER1 = 1
 const HUD_SPECIAL_TIMER2 = 2
 const HUD_SPECIAL_TIMER3 = 3
-const HUD_TICKER = 6
+const HUD_SPECIAL_COOLDOWN = 4
+const HUD_SPECIAL_ROUNDTIME = 5
+const HUD_SPECIAL_MAPNAME = 6
+const HUD_SPECIAL_MODENAME = 7
 
 /* Manage Timers Flags */
-const TIMER_COUNTDOWN = 2
-const TIMER_COUNTUP = 1
 const TIMER_DISABLE = 0
-const TIMER_SET = 4
+const TIMER_COUNTUP = 1
+const TIMER_COUNTDOWN = 2
 const TIMER_STOP = 3
+const TIMER_SET = 4
 
 /* Shutdown Function Flags */
-const SCRIPT_SHUTDOWN_EXIT_GAME = 4
-const SCRIPT_SHUTDOWN_LEVEL_TRANSITION = 3
 const SCRIPT_SHUTDOWN_MANUAL = 0
 const SCRIPT_SHUTDOWN_ROUND_RESTART = 1
 const SCRIPT_SHUTDOWN_TEAM_SWAP = 2
+const SCRIPT_SHUTDOWN_LEVEL_TRANSITION = 3
+const SCRIPT_SHUTDOWN_EXIT_GAME = 4
 
 /* Spawn Direction Flags */
-const SPAWNDIR_E = 4
 const SPAWNDIR_N = 1
 const SPAWNDIR_NE = 2
-const SPAWNDIR_NW = 128
-const SPAWNDIR_S = 16
+const SPAWNDIR_E = 4
 const SPAWNDIR_SE = 8
+const SPAWNDIR_S = 16
 const SPAWNDIR_SW = 32
 const SPAWNDIR_W = 64
+const SPAWNDIR_NW = 128
 
 /* Spawn Rules */
-const SCRIPTED_SPAWN_BATTLEFIELD = 2
 const SCRIPTED_SPAWN_FINALE = 0
-const SCRIPTED_SPAWN_POSITIONAL = 3
 const SCRIPTED_SPAWN_SURVIVORS = 1
-const SPAWN_ABOVE_SURVIVORS = 6
-const SPAWN_ANYWHERE = 0
-const SPAWN_BATTLEFIELD = 2
-const SPAWN_BEHIND_SURVIVORS = 1
-const SPAWN_FAR_AWAY_FROM_SURVIVORS = 5
+const SCRIPTED_SPAWN_BATTLEFIELD = 2
+const SCRIPTED_SPAWN_POSITIONAL = 3
+
 const SPAWN_FINALE = 0
-const SPAWN_IN_FRONT_OF_SURVIVORS = 7
-const SPAWN_LARGE_VOLUME = 9
-const SPAWN_NEAR_IT_VICTIM = 2
-const SPAWN_NEAR_POSITION = 10
-const SPAWN_NO_PREFERENCE = -1
-const SPAWN_POSITIONAL = 3
-const SPAWN_SPECIALS_ANYWHERE = 4
-const SPAWN_SPECIALS_IN_FRONT_OF_SURVIVORS = 3
 const SPAWN_SURVIVORS = 1
+const SPAWN_BATTLEFIELD = 2
+const SPAWN_POSITIONAL = 3
+
+const SPAWN_NO_PREFERENCE = -1
+const SPAWN_ANYWHERE = 0
+const SPAWN_BEHIND_SURVIVORS = 1
+const SPAWN_NEAR_IT_VICTIM = 2
+const SPAWN_SPECIALS_IN_FRONT_OF_SURVIVORS = 3
+const SPAWN_SPECIALS_ANYWHERE = 4
+const SPAWN_FAR_AWAY_FROM_SURVIVORS = 5
+const SPAWN_ABOVE_SURVIVORS = 6
+const SPAWN_IN_FRONT_OF_SURVIVORS = 7
 const SPAWN_VERSUS_FINALE_DISTANCE = 8
+const SPAWN_LARGE_VOLUME = 9
+const SPAWN_NEAR_POSITION = 10
 
 /* Trace Line Mask Flags */
 const TRACE_MASK_ALL = -1
-const TRACE_MASK_NPC_SOLID = 33701899
-const TRACE_MASK_PLAYER_SOLID = 33636363
-const TRACE_MASK_SHOT = 1174421507
-const TRACE_MASK_VISIBLE_AND_NPCS = 33579137
 const TRACE_MASK_VISION = 33579073
+const TRACE_MASK_VISIBLE_AND_NPCS = 33579137
+const TRACE_MASK_PLAYER_SOLID = 33636363
+const TRACE_MASK_NPC_SOLID = 33701899
+const TRACE_MASK_SHOT = 1174421507
 
 /* Weapon Upgrade Types */
 const UPGRADE_INCENDIARY_AMMO = 0
@@ -324,15 +328,15 @@ const UPGRADE_EXPLOSIVE_AMMO = 1
 const UPGRADE_LASER_SIGHT = 2
 
 /* Zombie Types */
-const ZOMBIE_BOOMER = 2
-const ZOMBIE_CHARGER = 6
-const ZOMBIE_HUNTER = 3
-const ZOMBIE_JOCKEY = 5
 const ZOMBIE_NORMAL = 0
 const ZOMBIE_SMOKER = 1
+const ZOMBIE_BOOMER = 2
+const ZOMBIE_HUNTER = 3
 const ZOMBIE_SPITTER = 4
-const ZOMBIE_TANK = 8
+const ZOMBIE_JOCKEY = 5
+const ZOMBIE_CHARGER = 6
 const ZOMBIE_WITCH = 7
+const ZOMBIE_TANK = 8
 const ZSPAWN_MOB = 10
 const ZSPAWN_MUDMEN = 12
 const ZSPAWN_WITCHBRIDE = 11
@@ -344,7 +348,7 @@ const HUD_PRINTTALK = 3
 const HUD_PRINTCENTER = 4
 
 /*===============================*\
-*   Enumerations & Constants    *
+ *   Enumerations & Constants    *
 \*===============================*/
 
 const MAXENTS = 2048
@@ -377,47 +381,47 @@ const HIDE_HUD_IN_VEHICLE = 1024
 
 enum eTrace
 {
-	Mask_All = -1
-	Mask_NPC_Solid = 33701899
-	Mask_Player_Solid = 33636363
-	Mask_Shot = 1174421507
-	Mask_Visible_And_NPCS = 33579137
-	Mask_Visible = 33579073
-	Distance = 1000000000
-	Type_Hit = 1
+	Mask_All = -1,
+	Mask_NPC_Solid = 33701899,
+	Mask_Player_Solid = 33636363,
+	Mask_Shot = 1174421507,
+	Mask_Visible_And_NPCS = 33579137,
+	Mask_Visible = 33579073,
+	Distance = 1000000000,
+	Type_Hit = 1,
 	Type_Pos = 2
 }
 
 enum eUpgrade
 {
-	None = 0
-	Incendiary = 1
-	Explosive = 2
+	None = 0,
+	Incendiary = 1,
+	Explosive = 2,
 	Laser = 4
 }
 
 enum eInventoryWeapon
 {
-	Primary
+	Primary = 0,
 	Secondary
 }
 
 enum eTeam
 {
-	Everyone
-	Survivor
+	Everyone = 0,
+	Survivor,
 	Infected
 }
 
 enum eButtonType
 {
-	Pressed
-	Released
+	Pressed = 0,
+	Released,
 	Hold
 }
 
 /*===============================*\
-*           Classes             *
+ *           Classes             *
 \*===============================*/
 
 /** Class Matrix
@@ -460,6 +464,7 @@ class CMatrix
 		}
 		m_aMatrix = matrix;
 	}
+
 	function Multiply(matrix)
 	{
 		if (matrix instanceof CMatrix)
@@ -494,6 +499,7 @@ class CMatrix
 		}
 		throw "argument is not a matrix";
 	}
+
 	function Add(matrix)
 	{
 		if (matrix instanceof CMatrix)
@@ -516,6 +522,7 @@ class CMatrix
 		}
 		throw "expected a matrix";
 	}
+
 	function Scale(value)
 	{
 		local aMatrix = [];
@@ -529,10 +536,12 @@ class CMatrix
 		}
 		return CMatrix(aMatrix, m_iRows, m_iColumns);
 	}
+
 	function Division(value)
 	{
 		return Scale(1.0 / value);
 	}
+
 	function Determinant()
 	{
 		if (!IsSquare())
@@ -557,6 +566,7 @@ class CMatrix
 		}
 		return (m_Determinant = determinant);
 	}
+
 	function Inverse()
 	{
 		if (!IsSquare())
@@ -575,6 +585,7 @@ class CMatrix
 		local matrix = CMatrix(aMatrixOutput, m_iRows, m_iColumns).Transpose();
 		return matrix.Division(Determinant());
 	}
+
 	function Transpose()
 	{
 		local aTransposeMatrix = [];
@@ -583,6 +594,7 @@ class CMatrix
 			
 		return CMatrix(aTransposeMatrix, m_iColumns, m_iRows);
 	}
+
 	function ToVector()
 	{
 		if (m_iRows == 3)
@@ -594,6 +606,7 @@ class CMatrix
 		if (m_iRows == 2)
 			return Vector2D(m_aMatrix[0][0], m_aMatrix[1][0]);
 	}
+
 	function GetMinor(iRow, iColumn)
 	{
 		if (m_iRows == 1 && m_iColumns == 1)
@@ -618,6 +631,7 @@ class CMatrix
 		}
 		return CMatrix(aMinor, m_iRows - 1, m_iColumns - 1);
 	}
+
 	function GetColumnArray(iColumn)
 	{
 		local aColumn = [];
@@ -626,30 +640,19 @@ class CMatrix
 
 		return aColumn;
 	}
-	function GetRowArray(iRow)
-	{
-		return clone m_aMatrix[iRow];
-	}
-	function GetCellValue(iRow, iColumn)
-	{
-		return m_aMatrix[iRow][iColumn];
-	}
-	function IsSquare()
-	{
-		return m_iRows == m_iColumns;
-	}
-	function GetMatrix()
-	{
-		return m_aMatrix;
-	}
-	function GetRows()
-	{
-		return m_iRows;
-	}
-	function GetColumns()
-	{
-		return m_iColumns;
-	}
+
+	function GetRowArray(iRow) { return clone m_aMatrix[iRow]; }
+
+	function GetCellValue(iRow, iColumn) { return m_aMatrix[iRow][iColumn]; }
+
+	function IsSquare() { return m_iRows == m_iColumns; }
+
+	function GetMatrix() { return m_aMatrix; }
+
+	function GetRows() { return m_iRows; }
+
+	function GetColumns() { return m_iColumns; }
+
 	function _tostring()
 	{
 		local str = "Matrix: (";
@@ -668,106 +671,89 @@ class CMatrix
 		}
 		return str;
 	}
+
 	function _mul(arg)
 	{
 		if (typeof arg == "integer" || typeof arg == "float")
-		{
 			return Scale(arg);
-		}
+
 		return Multiply(arg);
 	}
-	function _div(arg)
-	{
-		return Division(arg);
-	}
-	function _unm()
-	{
-		return Inverse();
-	}
-	function _add(arg)
-	{
-		return Add(arg);
-	}
-	function _sub(arg)
-	{
-		return Add(arg.Scale(-1));
-	}
+
+	function _set(key, val) { throw null; }
+
+	function _div(arg) { return Division(arg); }
+
+	function _unm() { return Inverse(); }
+
+	function _add(arg) { return Add(arg); }
+
+	function _sub(arg) { return Add(arg.Scale(-1)); }
+
 	m_aMatrix = null;
 	m_iColumns = 0;
 	m_iRows = 0;
 	m_Determinant = 0;
 }
 
-/** Class Loop function
+/** Class Loop Function
 * Signature: class CLoopFunction(string funcName, float refiretime, any args)
 */
 
 class CLoopFunction
 {
-	constructor(sFunction, flInterval, aInputVars = [])
+	constructor(sFunction, flInterval, aInputArgs = [])
 	{
 		local aArgs = [this];
-		aArgs.extend(aInputVars);
+		aArgs.extend(aInputArgs);
 
-		m_aInputVars = aArgs;
+		m_aInputArgs = aArgs;
 		m_sFunctionName = sFunction;
 		m_sTimerName = LF_PREFIX + sFunction.tolower();
 
 		if (flInterval != null) m_flInterval = flInterval;
 	}
-	function GetInputVariables()
-	{
-		return m_aInputVars;
-	}
-	function GetFunctionName()
-	{
-		return m_sFunctionName;
-	}
-	function GetTimerName()
-	{
-		return m_sTimerName;
-	}
-	function GetRefireTime()
-	{
-		return m_flInterval;
-	}
+
+	function GetInputArguments() { return m_aInputArgs; }
+
+	function GetFunctionName() { return m_sFunctionName; }
+
+	function GetTimerName() { return m_sTimerName; }
+
+	function GetRefireTime() { return m_flInterval; }
+
 	m_sFunctionName = null;
-	m_aInputVars = null;
+	m_aInputArgs = null;
 	m_sTimerName = null;
 	m_flInterval = null;
 }
 
-/** Class On tick function
+/** Class On Tick Function
 * Signature: class COnTickFunction(string funcName, any args)
 */
 
 class COnTickFunction
 {
-	constructor(sFunction, aInputVars = [])
+	constructor(sFunction, aInputArgs = [])
 	{
 		local aArgs = [this];
-		aArgs.extend(aInputVars);
+		aArgs.extend(aInputArgs);
 
-		m_aInputVars = aArgs;
+		m_aInputArgs = aArgs;
 		m_sFunctionName = sFunction;
 	}
-	function GetInputVariables()
-	{
-		return m_aInputVars;
-	}
-	function GetCallingFunction()
-	{
-		return compilestring("return " + m_sFunctionName)();
-	}
-	function GetFunctionName()
-	{
-		return m_sFunctionName;
-	}
+
+	function GetInputArguments() { return m_aInputArgs; }
+
+	function GetCallingFunction() { return compilestring("return " + m_sFunctionName)(); }
+
+	function GetFunctionName() { return m_sFunctionName; }
+
 	m_sFunctionName = null;
-	m_aInputVars = null;
+	m_aInputArgs = null;
 }
 
-/** Class Chat command
+/** Class Chat Command
 * Signature: class CChatCommand(string command, function callFunction, bool bInputPlayerHandle, bool bInputValue)
 */
 
@@ -780,29 +766,22 @@ class CChatCommand
 		m_bInputPlayerHandle = bInputPlayerHandle;
 		m_bInputValue = bInputValue;
 	}
-	function GetCommand()
-	{
-		return m_sCommand;
-	}
-	function GetCallingFunction()
-	{
-		return m_Function;
-	}
-	function GetInputPlayerHandle()
-	{
-		return m_bInputPlayerHandle;
-	}
-	function GetInputValue()
-	{
-		return m_bInputValue;
-	}
+
+	function GetCommand() { return m_sCommand; }
+
+	function GetCallingFunction() { return m_Function; }
+
+	function GetInputPlayerHandle() { return m_bInputPlayerHandle; }
+
+	function GetInputValue() { return m_bInputValue; }
+
 	m_sCommand = null;
 	m_Function = null;
 	m_bInputPlayerHandle = false;
 	m_bInputValue = false;
 }
 
-/** Class Button
+/** Class Button Listener
 * Signature: class CButtonListener(int button, string funcName, int pressType, int team)
 */
 
@@ -815,33 +794,24 @@ class CButtonListener
 		m_iPressType = iType;
 		m_iTeam = iTeam;
 	}
-	function GetCallingFunction()
-	{
-		return compilestring("return " + m_sFunctionName)();
-	}
-	function GetFunction() 
-	{
-		return m_sFunctionName;
-	}
-	function GetButton()
-	{
-		return m_nButtons;
-	}
-	function GetTeam()
-	{
-		return m_iTeam;
-	}
-	function GetType()
-	{
-		return m_iPressType;
-	}
+
+	function GetCallingFunction() { return compilestring("return " + m_sFunctionName)(); }
+
+	function GetFunction() { return m_sFunctionName; }
+
+	function GetButton() { return m_nButtons; }
+
+	function GetTeam() { return m_iTeam; }
+
+	function GetType() { return m_iPressType; }
+
 	m_sFunctionName = null;
 	m_nButtons = null;
 	m_iPressType = null;
 	m_iTeam = null;
 }
 
-/** Class User command
+/** Class User Command
 * Signature: class CUserCommand(string command, function callFunction, bool bInputValue, bool bInputPlayerHandle)
 */
 
@@ -854,22 +824,15 @@ class CUserCommand
 		m_bInputValue = bInputValue;
 		m_bInputPlayerHandle = bInputPlayerHandle;
 	}
-	function GetCallingFunction()
-	{
-		return m_Function;
-	}
-	function GetInputPlayerHandle()
-	{
-		return m_bInputPlayerHandle;
-	}
-	function GetInputValue()
-	{
-		return m_bInputValue;
-	}
-	function GetCommand()
-	{
-		return m_sCommand;
-	}
+
+	function GetCallingFunction() { return m_Function; }
+
+	function GetInputPlayerHandle() { return m_bInputPlayerHandle; }
+
+	function GetInputValue() { return m_bInputValue; }
+
+	function GetCommand() { return m_sCommand; }
+
 	m_sCommand = null;
 	m_Function = null;
 	m_bInputValue = false;
@@ -891,30 +854,19 @@ class CConVar
 		m_flMinValue = flMinValue;
 		m_flMaxValue = flMaxValue;
 	}
-	function GetName()
-	{
-		return m_sName;
-	}
-	function GetDefault()
-	{
-		return m_sDefaultValue;
-	}
-	function GetValue(bReturnFloat = false)
-	{
-		return bReturnFloat ? Convars.GetFloat(m_sName) : Convars.GetStr(m_sName);
-	}
-	function GetCurrentValue()
-	{
-		return m_sValue;
-	}
-	function RestoreDefault()
-	{
-		m_sValue = m_sDefaultValue;
-	}
-	function SetValue(Value)
-	{
-		SendToServerConsole(format("setinfo %s %s", m_sName, Value.tostring()));
-	}
+
+	function GetName() { return m_sName; }
+
+	function GetDefault() { return m_sDefaultValue; }
+
+	function GetValue(bReturnFloat = false) { return bReturnFloat ? Convars.GetFloat(m_sName) : Convars.GetStr(m_sName); }
+
+	function GetCurrentValue() { return m_sValue; }
+
+	function RestoreDefault() { m_sValue = m_sDefaultValue; }
+
+	function SetValue(Value) { SendToServerConsole(format("setinfo %s %s", m_sName, Value.tostring())); }
+
 	function AddChangeHook(Function)
 	{
 		if (!m_bChangeHook)
@@ -924,6 +876,7 @@ class CConVar
 			printf("[Class ConVar] A function has been hooked for cvar '%s'", m_sName);
 		}
 	}
+
 	function RemoveChangeHook()
 	{
 		if (m_bChangeHook)
@@ -933,6 +886,7 @@ class CConVar
 			printf("[Class ConVar] A function has been unhooked for cvar '%s'", m_sName);
 		}
 	}
+
 	m_sName = null;
 	m_sValue = null;
 	m_sDefaultValue = null;
@@ -949,51 +903,47 @@ class CConVar
 
 class CTimer
 {
-	constructor(flCallTime, Function, aInputVars = [])
+	constructor(flCallTime, Function, aInputArgs = [])
 	{
 		local aArgs = [this];
-		aArgs.extend(aInputVars);
+		aArgs.extend(aInputArgs);
 
-		m_aInputVars = aArgs;
+		m_aInputArgs = aArgs;
 		m_sIdentifier = UniqueString();
 		m_Function = Function;
 		m_flCallTime = flCallTime;
 	}
-	function GetCallingFunction()
-	{
-		return m_Function;
-	}
-	function GetCallTime()
-	{
-		return m_flCallTime;
-	}
-	function GetInputVariables()
-	{
-		return m_aInputVars;
-	}
-	function GetIdentifier()
-	{
-		return m_sIdentifier;
-	}
+
+	function GetCallingFunction() { return m_Function; }
+
+	function GetCallTime() { return m_flCallTime; }
+
+	function GetInputArguments() { return m_aInputArgs; }
+
+	function GetIdentifier() { return m_sIdentifier; }
+
 	m_sIdentifier = null;
 	m_flCallTime = null;
 	m_Function = null;
-	m_aInputVars = null;
+	m_aInputArgs = null;
 }
 
 /*===============================*\
-*          Variables            *
+ *        Global Variables       *
 \*===============================*/
+
+if (!("g_sMapName" in this)) g_sMapName <- null;
+if (!("g_bOverrideGameHooks" in this)) g_bOverrideGameHooks <- false;
 
 g_hClientCommand <- SpawnEntityFromTable("point_clientcommand", {});
 g_hServerCommand <- SpawnEntityFromTable("point_servercommand", {});
 g_hBroadcastClientCommand <- SpawnEntityFromTable("point_broadcastclientcommand", {});
 
 /*===============================*\
-*           Tables              *
+ *           Tables              *
 \*===============================*/
 
-g_tCallBackEvents <- {};
+g_CallBackEvents <- {};
 VMath <- {};
 
 Math <-
@@ -1002,9 +952,78 @@ Math <-
 	Rad2Deg = 180 / PI
 };
 
+g_Hooks <-
+{
+	OnRoundStart = []
+	OnRoundStartPost = []
+	AdditionalClassMethodsInjected = []
+};
+
+g_ScriptPluginsHelper <-
+{
+	PureVirtualError = function()
+	{
+		throw "Abstract Class: cannot call undescribed virtual method";
+	}
+	
+	AddScriptPlugin = function(scriptPlugin)
+	{
+		if (scriptPlugin instanceof IScriptPlugin)
+		{
+			foreach (idx, plugin in g_aScriptPlugins)
+			{
+				if (plugin == scriptPlugin)
+				{
+					error(format("[AddScriptPlugin] Script Plugin '%s' already added\n", scriptPlugin.GetScriptPluginName()));
+					return false;
+				}
+				else if (plugin.GetClassName() == scriptPlugin.GetClassName())
+				{
+					g_aScriptPlugins[idx] = scriptPlugin;
+					printf("[AddScriptPlugin] Script Plugin '%s' was reloaded", scriptPlugin.GetScriptPluginName());
+					return true;
+				}
+			}
+
+			g_aScriptPlugins.push(scriptPlugin);
+			printf("[AddScriptPlugin] Script Plugin '%s' successfully added", scriptPlugin.GetScriptPluginName());
+			return true;
+		}
+
+		error("[AddScriptPlugin] Failed to add a Script Plugin\n");
+		return false;
+	}
+
+	RemoveScriptPlugin = function(scriptPlugin)
+	{
+		if (scriptPlugin instanceof IScriptPlugin)
+		{
+			foreach (idx, plugin in g_aScriptPlugins)
+			{
+				if (plugin == scriptPlugin)
+				{
+					g_aScriptPlugins.remove(idx);
+					scriptPlugin.Unload();
+
+					printf("[RemoveScriptPlugin] Script Plugin '%s' successfully removed", scriptPlugin.GetScriptPluginName());
+					return true;
+				}
+			}
+
+			error(format("[RemoveScriptPlugin] Script Plugin '%s' wasn't added\n", scriptPlugin.GetScriptPluginName()));
+			return false;
+		}
+
+		error("[RemoveScriptPlugin] Failed to remove a Script Plugin\n");
+		return false;
+	}
+};
+
 /*===============================*\
-*           Arrays              *
+ *           Arrays              *
 \*===============================*/
+
+if (!("g_aScriptPlugins" in this)) g_aScriptPlugins <- [];
 
 g_bAllowChangeCameraAngles <- array(MAXENTS + 1, true);
 g_aLoopFunctions <- [];
@@ -1016,7 +1035,34 @@ g_aConVars <- [];
 g_aTimers <- [];
 
 /*===============================*\
-*         Functions             *
+ *         Interfaces            *
+\*===============================*/
+
+if (!("ifaces_initialized" in this))
+{
+
+/** Interface Script Plugin
+* Signature: class IScriptPlugin()
+*/
+
+class IScriptPlugin
+{
+	function Load() { g_ScriptPluginsHelper.PureVirtualError() };
+	function Unload() { g_ScriptPluginsHelper.PureVirtualError() };
+	function OnRoundStartPost() { g_ScriptPluginsHelper.PureVirtualError() };
+	function OnRoundEnd() { g_ScriptPluginsHelper.PureVirtualError() };
+	function AdditionalClassMethodsInjected() { g_ScriptPluginsHelper.PureVirtualError() };
+	function GetClassName() { g_ScriptPluginsHelper.PureVirtualError() };
+	function GetScriptPluginName() { g_ScriptPluginsHelper.PureVirtualError() };
+	function GetInterfaceVersion() { g_ScriptPluginsHelper.PureVirtualError() };
+}
+
+ifaces_initialized <- true;
+
+}
+
+/*===============================*\
+ *         Functions             *
 \*===============================*/
 
 /** Print format
@@ -1026,9 +1072,9 @@ g_aTimers <- [];
 
 function printf(sMsg, ...)
 {
-	local aInputVars = [this, sMsg];
-	aInputVars.extend(vargv);
-	printl(format.acall(aInputVars));
+	local aInputArgs = [this, sMsg];
+	aInputArgs.extend(vargv);
+	printl(format.acall(aInputArgs));
 }
 
 /** Say format
@@ -1037,9 +1083,9 @@ function printf(sMsg, ...)
 
 function sayf(sMsg, ...)
 {
-	local aInputVars = [this, sMsg];
-	aInputVars.extend(vargv);
-	Say(null, format.acall(aInputVars), false);
+	local aInputArgs = [this, sMsg];
+	aInputArgs.extend(vargv);
+	Say(null, format.acall(aInputArgs), false);
 }
 
 /** Simplified Say function
@@ -1170,8 +1216,8 @@ function RunScriptCode(sScript, flDelay = 0.0, hActivator = null, hCaller = null
 		return;
 	}
 
-	if (!hCaller) EntFire((hActivator != null ? "!activator" : "worldspawn"), "RunScriptCode", sScript, flDelay, hActivator);
-	else AcceptEntityInput(hCaller, "RunScriptCode", sScript, flDelay, hActivator);
+	if (hCaller) AcceptEntityInput(hCaller, "RunScriptCode", sScript, flDelay, hActivator);
+	else EntFire((hActivator != null ? "!activator" : "worldspawn"), "RunScriptCode", sScript, flDelay, hActivator);
 }
 
 /** Call a script function code with the delay
@@ -1186,8 +1232,8 @@ function CallScriptFunction(sFunction, flDelay = 0.0, hActivator = null, hCaller
 		return;
 	}
 
-	if (!hCaller) EntFire((hActivator != null ? "!activator" : "worldspawn"), "CallScriptFunction", sFunction, flDelay, hActivator);
-	else AcceptEntityInput(hCaller, "CallScriptFunction", sFunction, flDelay, hActivator);
+	if (hCaller) AcceptEntityInput(hCaller, "CallScriptFunction", sFunction, flDelay, hActivator);
+	else EntFire((hActivator != null ? "!activator" : "worldspawn"), "CallScriptFunction", sFunction, flDelay, hActivator);
 }
 
 /** Call a function with the delay and input variables
@@ -1450,16 +1496,15 @@ function CollectAliveSurvivors()
 {
 	local hPlayer;
 	local tSurvivors = {};
+
 	while (hPlayer = Entities.FindByClassname(hPlayer, "player"))
 	{
-		if (hPlayer.IsSurvivor())
+		if (hPlayer.IsSurvivor() && hPlayer.IsAlive() && !hPlayer.IsIncapacitated())
 		{
-			if (hPlayer.IsAlive() && !hPlayer.IsIncapacitated())
-			{
-				tSurvivors[hPlayer.GetEntityIndex()] <- hPlayer;
-			}
+			tSurvivors[hPlayer.GetEntityIndex()] <- hPlayer;
 		}
 	}
+
 	return tSurvivors;
 }
 
@@ -1471,6 +1516,7 @@ function CollectAlivePlayers()
 {
 	local hPlayer;
 	local tPlayers = {};
+
 	while (hPlayer = Entities.FindByClassname(hPlayer, "player"))
 	{
 		if (hPlayer.IsSurvivor())
@@ -1488,6 +1534,7 @@ function CollectAlivePlayers()
 			}
 		}
 	}
+
 	return tPlayers;
 }
 
@@ -1499,10 +1546,10 @@ function CollectPlayers()
 {
 	local hPlayer;
 	local tPlayers = {};
+
 	while (hPlayer = Entities.FindByClassname(hPlayer, "player"))
-	{
 		tPlayers[hPlayer.GetEntityIndex()] <- hPlayer;
-	}
+
 	return tPlayers;
 }
 
@@ -1561,16 +1608,15 @@ function DoTraceLine(vecStart = Vector(), vecDir = Vector(), tr_type = eTrace.Ty
 
 	TraceLine(tTrace);
 
-	if (tr_type == eTrace.Type_Hit)
-		if (tTrace.hit && tTrace.enthit.GetEntityIndex() != 0)
-				return tTrace.enthit;
+	if (tr_type == eTrace.Type_Hit && tTrace.hit && tTrace.enthit.GetEntityIndex() != 0)
+		return tTrace.enthit;
 
 	if (tr_type == eTrace.Type_Pos)
 		return tTrace.pos;
 }
 
 /*===============================*\
-*     ConVar Class Functions    *
+ *     ConVar Class Functions    *
 \*===============================*/
 
 /** Create a new console variable
@@ -1652,8 +1698,7 @@ function GetConVarInt(convar)
 		if (cvar.GetName() == convar.GetName())
 		{
 			local value, min, max;
-			if (!(value = cvar.GetValue(true)))
-				return 0;
+			if (!(value = cvar.GetValue(true))) return 0;
 			value = value.tointeger();
 			if (cvar.m_sType == "integer")
 			{
@@ -1661,6 +1706,7 @@ function GetConVarInt(convar)
 				{
 					if (value < (min = cvar.m_flMinValue.tointeger()))
 						return min;
+						
 					if (value > (max = cvar.m_flMaxValue.tointeger()))
 						return max;
 				}
@@ -1691,8 +1737,7 @@ function GetConVarFloat(convar)
 		if (cvar.GetName() == convar.GetName())
 		{
 			local value = cvar.GetValue(true);
-			if (!value)
-				return 0.0;
+			if (!value) return 0.0;
 			value = value.tofloat();
 			if (cvar.m_sType == "float")
 			{
@@ -1700,6 +1745,7 @@ function GetConVarFloat(convar)
 				{
 					if (value < cvar.m_flMinValue)
 						return cvar.m_flMinValue;
+
 					if (value > cvar.m_flMaxValue)
 						return cvar.m_flMaxValue;
 				}
@@ -1746,7 +1792,7 @@ function RemoveAttachment(hEntity, hTarget, flDelay = 0.0)
 * Signature: float GetDistance(handle entity, handle target, bool bSquared, bool bMethod2D)
 */
 
-function GetDistance(hEntity, hTarget, bSquared = false, bMethod2D = false)
+function GetDistanceToEntity(hEntity, hTarget, bSquared = false, bMethod2D = false)
 {
 	local flDistance;
 	if (bSquared) flDistance = bMethod2D ? (hEntity.GetOrigin() - hTarget.GetOrigin()).Length2DSqr() : (hEntity.GetOrigin() - hTarget.GetOrigin()).LengthSqr();
@@ -1761,13 +1807,9 @@ function GetDistance(hEntity, hTarget, bSquared = false, bMethod2D = false)
 function Ignite(hEntity, hAttacker = null, flInterval = 5.0)
 {
 	if (hEntity.IsPlayer() || hEntity.GetClassname() == "witch")
-	{
 		hEntity.TakeDamage(0.01, DMG_BURN, !hAttacker ? hEntity : hAttacker);
-	}
 	else
-	{
 		AcceptEntityInput(hEntity, "IgniteLifeTime", flInterval.tostring());
-	}
 	
 	if (hEntity.IsPlayer() && !hEntity.IsSurvivor())
 	{
@@ -1943,7 +1985,7 @@ function RemoveScriptScopeKey(hEntity, key)
 }
 
 /*===============================*\
-*    Extends Classes Methods    *
+ *    Extends Classes Methods    *
 \*===============================*/
 
 function InjectAdditionalClassMethods()
@@ -1996,7 +2038,7 @@ function InjectAdditionalClassMethods()
 		return false;
 	}
 
-	/** Is player stuck
+	/** Is a player stuck
 	* Signature: bool CTerrorPlayer.IsStuck()
 	*/
 
@@ -2126,34 +2168,46 @@ function InjectAdditionalClassMethods()
 	{
 		local tInv = {};
 		GetInvTable(this, tInv);
+
 		if (iSlot == eInventoryWeapon.Primary)
 		{
 			if ("slot0" in tInv)
 			{
 				local hWeapon = tInv["slot0"];
+
 				if (iClip != null)
-				{
 					NetProps.SetPropInt(hWeapon, "m_iClip1", iClip);
-				}
+
 				if (iAmmo != null)
 				{
 					NetProps.SetPropIntArray(this, "m_iAmmo", iAmmo, NetProps.GetPropInt(hWeapon, "m_iPrimaryAmmoType"));
 					if (iUpgradeAmmo != null)
 					{
 						local iUpgradeType = NetProps.GetPropInt(hWeapon, "m_upgradeBitVec");
-						if (iUpgradeType & eUpgrade.Incendiary || iUpgradeType & eUpgrade.Explosive) NetProps.SetPropInt(hWeapon, "m_nUpgradedPrimaryAmmoLoaded", iUpgradeAmmo);
-						else printl("[SetAmmo] No upgrade ammo found");
+
+						if (iUpgradeType & eUpgrade.Incendiary || iUpgradeType & eUpgrade.Explosive)
+							NetProps.SetPropInt(hWeapon, "m_nUpgradedPrimaryAmmoLoaded", iUpgradeAmmo);
+						else
+							printl("[SetAmmo] No upgrade ammo found");
 					}
 				}
 			}
-			else printl("[SetAmmo] Invalid weapon");
+			else
+			{
+				printl("[SetAmmo] Invalid weapon");
+			}
 		}
 		else if (iSlot == eInventoryWeapon.Secondary && iClip != null)
 		{
-			if ("slot1" in tInv || tInv["slot1"].GetClassname() != "weapon_melee") NetProps.SetPropInt(tInv["slot1"], "m_iClip1", iClip);
-			else printl("[SetAmmo] Invalid weapon");
+			if ("slot1" in tInv || tInv["slot1"].GetClassname() != "weapon_melee")
+				NetProps.SetPropInt(tInv["slot1"], "m_iClip1", iClip);
+			else
+				printl("[SetAmmo] Invalid weapon");
 		}
-		else printl("[SetAmmo] Wrong inventory slot");
+		else
+		{
+			printl("[SetAmmo] Wrong inventory slot");
+		}
 	}
 
 	/** Do trace Line
@@ -2174,9 +2228,8 @@ function InjectAdditionalClassMethods()
 
 		TraceLine(tTrace);
 
-		if (tr_type == eTrace.Type_Hit)
-			if (tTrace.hit && tTrace.enthit.GetEntityIndex() != 0)
-					return tTrace.enthit;
+		if (tr_type == eTrace.Type_Hit && tTrace.hit && tTrace.enthit.GetEntityIndex() != 0)
+			return tTrace.enthit;
 
 		if (tr_type == eTrace.Type_Pos)
 			return tTrace.pos;
@@ -2184,7 +2237,7 @@ function InjectAdditionalClassMethods()
 }
 
 /*===============================*\
-*        Hook Functions         *
+ *        Hook Functions         *
 \*===============================*/
 
 /* Game event hook */
@@ -2201,13 +2254,13 @@ function HookEvent(sEvent = null, func = null, tScope = null)
 		return;
 	}
 
-	if (!(sEvent in g_tCallBackEvents))
+	if (!(sEvent in g_CallBackEvents))
 	{
-		g_tCallBackEvents[sEvent] <- {};
-		g_tCallBackEvents[sEvent]["CallBack_Functions"] <- [];
-		g_tCallBackEvents[sEvent]["OnGameEvent_" + sEvent] <- function(tParams)
+		g_CallBackEvents[sEvent] <- {};
+		g_CallBackEvents[sEvent]["CallBack_Functions"] <- [];
+		g_CallBackEvents[sEvent]["OnGameEvent_" + sEvent] <- function(tParams)
 		{
-			foreach (__func in g_tCallBackEvents[sEvent]["CallBack_Functions"])
+			foreach (__func in g_CallBackEvents[sEvent]["CallBack_Functions"])
 			{
 				if ("userid" in tParams) tParams["_player"] <- GetPlayerFromUserID(tParams.userid);
 				if ("victim" in tParams) tParams["_victim"] <- GetPlayerFromUserID(tParams.victim);
@@ -2237,7 +2290,7 @@ function HookEvent(sEvent = null, func = null, tScope = null)
 			return;
 		}
 
-		foreach (func in g_tCallBackEvents[sEvent]["CallBack_Functions"])
+		foreach (func in g_CallBackEvents[sEvent]["CallBack_Functions"])
 		{
 			if (func == sFunction)
 			{
@@ -2247,7 +2300,7 @@ function HookEvent(sEvent = null, func = null, tScope = null)
 		}
 
 		printf("[HookEvent] Event hook function '%s' has been registered for the game event '%s'", sFunction, sEvent);
-		g_tCallBackEvents[sEvent]["CallBack_Functions"].push(func);
+		g_CallBackEvents[sEvent]["CallBack_Functions"].push(func);
 	}
 	else
 	{
@@ -2255,7 +2308,7 @@ function HookEvent(sEvent = null, func = null, tScope = null)
 		return;
 	}
 
-	__CollectEventCallbacks(g_tCallBackEvents[sEvent], "OnGameEvent_", "GameEventCallbacks", RegisterScriptGameEventListener);
+	__CollectEventCallbacks(g_CallBackEvents[sEvent], "OnGameEvent_", "GameEventCallbacks", RegisterScriptGameEventListener);
 }
 
 /** Unhook game event or function
@@ -2270,7 +2323,7 @@ function UnhookEvent(sEvent = null, func = null, tScope = null)
 		return;
 	}
 
-	if (sEvent in g_tCallBackEvents)
+	if (sEvent in g_CallBackEvents)
 	{
 		if (func != null)
 		{
@@ -2292,12 +2345,12 @@ function UnhookEvent(sEvent = null, func = null, tScope = null)
 					return;
 				}
 
-				foreach (idx, __func in g_tCallBackEvents[sEvent]["CallBack_Functions"])
+				foreach (idx, __func in g_CallBackEvents[sEvent]["CallBack_Functions"])
 				{
 					if (__func == func)
 					{
 						printf("[UnhookEvent] Function '%s' has been unhooked for the game event '%s'", sFunction, sEvent);
-						g_tCallBackEvents[sEvent]["CallBack_Functions"].remove(idx);
+						g_CallBackEvents[sEvent]["CallBack_Functions"].remove(idx);
 						return;
 					}
 				}
@@ -2311,7 +2364,7 @@ function UnhookEvent(sEvent = null, func = null, tScope = null)
 		else
 		{
 			printf("[UnhookEvent] Game event '%s' has been unhooked", sEvent);
-			delete g_tCallBackEvents[sEvent];
+			delete g_CallBackEvents[sEvent];
 			return;
 		}
 	}
@@ -2325,7 +2378,7 @@ function UnhookEvent(sEvent = null, func = null, tScope = null)
 
 function UnhookAllEvents()
 {
-	foreach (event, val in g_tCallBackEvents) delete g_tCallBackEvents[event];
+	foreach (event, val in g_CallBackEvents) delete g_CallBackEvents[event];
 	printl("[UnhookAllEvents] All events have been unhooked");
 }
 
@@ -2353,7 +2406,7 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
-			local aVars = clone func.GetInputVariables();
+			local aVars = clone func.GetInputArguments();
 			aVars.remove(0);
 			printf("[RegisterLoopFunction] Function '%s' already registered", sFunction);
 			return;
@@ -2371,15 +2424,15 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 		SetScriptScopeVar(hTimer, "__loop_params", {
 			__func = sFunction
 			__with_args = vargv.len() > 0
-			__args = __loop_func.GetInputVariables()
+			__args = __loop_func.GetInputArguments()
 		});
 
 		SetScriptScopeVar(hTimer, "Think", function(){
 			if (this["__loop_params"].__with_args)
 			{
-				CreateTimer(flRefireTime, function(sFunction, aInputVars){
+				CreateTimer(flRefireTime, function(sFunction, aInputArgs){
 					if (IsFunctionExist(sFunction))
-						compilestring("return " + sFunction)().acall(aInputVars);
+						compilestring("return " + sFunction)().acall(aInputArgs);
 				}, this["__loop_params"].__func, this["__loop_params"].__args);
 			}
 			else CallScriptFunction(sFunction, flRefireTime, self, self);
@@ -2388,9 +2441,9 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 
 		if (vargv.len() > 0)
 		{
-			CreateTimer(0.01, function(sFunction, aInputVars){
-				compilestring("return " + sFunction)().acall(aInputVars);
-			}, sFunction, __loop_func.GetInputVariables());
+			CreateTimer(0.01, function(sFunction, aInputArgs){
+				compilestring("return " + sFunction)().acall(aInputArgs);
+			}, sFunction, __loop_func.GetInputArguments());
 		}
 		else CallScriptFunction(sFunction, 0.01, hTimer, hTimer);
 		CallScriptFunction("Think", 0.01, hTimer, hTimer);
@@ -2448,7 +2501,7 @@ function RemoveLoopFunction(sFunction, ...)
 		{
 			if (vargv.len() > 0)
 			{
-				local aVars = clone func.GetInputVariables();
+				local aVars = clone func.GetInputArguments();
 				aVars.remove(0);
 
 				if (IsArraysEqual(aVars, vargv))
@@ -2521,7 +2574,7 @@ function IsLoopFunctionRegistered(sFunction, ...)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
-			local aVars = clone func.GetInputVariables();
+			local aVars = clone func.GetInputArguments();
 			aVars.remove(0);
 
 			if (IsArraysEqual(aVars, vargv))
@@ -2556,7 +2609,7 @@ function RegisterOnTickFunction(sFunction, ...)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
-			local aVars = clone func.GetInputVariables();
+			local aVars = clone func.GetInputArguments();
 			aVars.remove(0);
 
 			if (IsArraysEqual(aVars, vargv))
@@ -2611,7 +2664,7 @@ function RemoveOnTickFunction(sFunction, ...)
 		{
 			if (vargv.len() > 0)
 			{
-				local aVars = clone func.GetInputVariables();
+				local aVars = clone func.GetInputArguments();
 				aVars.remove(0);
 
 				if (IsArraysEqual(aVars, vargv))
@@ -2678,7 +2731,7 @@ function IsOnTickFunctionRegistered(sFunction, ...)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
-			local aVars = clone func.GetInputVariables();
+			local aVars = clone func.GetInputArguments();
 			aVars.remove(0);
 
 			if (IsArraysEqual(aVars, vargv))
@@ -2887,7 +2940,7 @@ function OnTickCall()
 	for (local i = 0; i < g_aOnTickFunctions.len(); i++)
 	{
 		try {
-			g_aOnTickFunctions[i].GetCallingFunction().acall(g_aOnTickFunctions[i].GetInputVariables());
+			g_aOnTickFunctions[i].GetCallingFunction().acall(g_aOnTickFunctions[i].GetInputArguments());
 		}
 		catch (error) {
 			printl("[OnTickFunction Watchdog] An error has occurred, on tick function has been removed");
@@ -2901,9 +2954,9 @@ function OnTickCall()
 		if (g_aTimers[idx].GetCallTime() <= Time())
 		{
 			try {
-				g_aTimers[idx].GetCallingFunction().acall(g_aTimers[idx].GetInputVariables());
+				g_aTimers[idx].GetCallingFunction().acall(g_aTimers[idx].GetInputArguments());
 			}
-			catch (error){
+			catch (error) {
 				printl("[Timer Watchdog] An error has occurred, calling task has been removed");
 			}
 
@@ -2995,13 +3048,52 @@ function OnTickCall()
 	}
 }
 
-function OnRoundStart(tParams)
+function LOU_OnRoundStart(tParams)
 {
-	if ("OnGameplayStart" in getroottable())
-		OnGameplayStart();
+	foreach (func in g_Hooks.OnRoundStart)
+		func();
+	
+	foreach (scriptPlugin in g_aScriptPlugins)
+		scriptPlugin.Load();
 
-	if ("OnGameplayStart_Post" in getroottable())
-		CreateTimer(0.01, OnGameplayStart_Post);
+	CreateTimer(0.01, function(){
+		foreach (func in g_Hooks.OnRoundStartPost)
+			func();
+		
+		foreach (scriptPlugin in g_aScriptPlugins)
+			scriptPlugin.OnRoundStartPost();
+
+		g_Hooks.OnRoundStartPost.clear();
+	});
+
+	g_Hooks.OnRoundStart.clear();
+}
+
+function LOU_OnRoundEnd(tParams)
+{
+	foreach (scriptPlugin in g_aScriptPlugins)
+		scriptPlugin.OnRoundEnd();
+	
+	delete ::ifaces_initialized;
+}
+
+function LOU_OnPlayerSay(tParams)
+{
+	if (g_aChatCommands.len() > 0 && tParams["_player"])
+	{
+		local hPlayer = tParams["_player"];
+		local sText = tParams.text.tolower();
+		local sCommand = split(sText, " ")[0];
+		local sValue, aArgs, Function, bInputHandle, bInputValue, aArgsTemp;
+
+		foreach (command in g_aChatCommands)
+		{
+			if (sCommand == command.GetCommand())
+			{
+				AnalyzeCommand(command, sText, hPlayer, " ");
+			}
+		}
+	}
 }
 
 function AnalyzeCommand(objCommand, sArgs, hPlayer, sSeparator)
@@ -3034,45 +3126,6 @@ function AnalyzeCommand(objCommand, sArgs, hPlayer, sSeparator)
 	Function.acall(aArgs);
 }
 
-function OnPlayerSay(tParams)
-{
-	if (g_aChatCommands.len() > 0 && tParams["_player"])
-	{
-		local hPlayer = tParams["_player"];
-		local sText = tParams.text.tolower();
-		local sCommand = split(sText, " ")[0];
-		local sValue, aArgs, Function, bInputHandle, bInputValue, aArgsTemp;
-
-		foreach (command in g_aChatCommands)
-		{
-			if (sCommand == command.GetCommand())
-			{
-				AnalyzeCommand(command, sText, hPlayer, " ");
-			}
-		}
-	}
-}
-
-function UserConsoleCommand(hPlayer, sArgs)
-{
-	if (g_aUserCommands.len() > 0 && sArgs)
-	{
-		sArgs = sArgs.tolower();
-
-		local aArgs = split(sArgs, ",");
-		local sCommand = aArgs[0];
-		local sValue, aArgs, Function, bInputHandle, bInputValue, aArgsTemp;
-
-		foreach (command in g_aUserCommands)
-		{
-			if (sCommand == command.GetCommand())
-			{
-				AnalyzeCommand(command, sArgs, hPlayer, ",");
-			}
-		}
-	}
-}
-
 function ButtonsListener_Think()
 {
 	if (g_aButtonsListener.len() > 0)
@@ -3083,9 +3136,13 @@ function ButtonsListener_Think()
 			foreach (button in g_aButtonsListener)
 			{
 				team = button.GetTeam();
-				if (team == eTeam.Everyone) CheckButtons(hPlayer, button);
-				else if (team == eTeam.Survivor && hPlayer.IsSurvivor()) CheckButtons(hPlayer, button);
-				else CheckButtons(hPlayer, button);
+
+				if (team == eTeam.Everyone)
+					CheckButtons(hPlayer, button);
+				else if (team == eTeam.Survivor && hPlayer.IsSurvivor())
+					CheckButtons(hPlayer, button);
+				else
+					CheckButtons(hPlayer, button);
 			}
 		}
 	}
@@ -3111,21 +3168,94 @@ function InjectAdditionalClassMethods_Think()
 	{
 		InjectAdditionalClassMethods();
 		RemoveOnTickFunction("InjectAdditionalClassMethods_Think");
-		printl("[InjectAdditionalClassMethods] Successfully injected");
-		if ("AdditionalClassMethodsInjected" in getroottable()) ::AdditionalClassMethodsInjected();
+
+		printl("[InjectAdditionalClassMethods_Think] Successfully injected");
+
+		foreach (func in g_Hooks.AdditionalClassMethodsInjected)
+			func();
+
+		foreach (scriptPlugin in g_aScriptPlugins)
+			scriptPlugin.AdditionalClassMethodsInjected();
+		
+		g_Hooks.AdditionalClassMethodsInjected.clear();
+
 		break;
 	}
+}
+
+if (g_bOverrideGameHooks)
+{
+
+function UserConsoleCommand(hPlayer, sArgs)
+{
+	if (g_aUserCommands.len() > 0 && sArgs)
+	{
+		sArgs = sArgs.tolower();
+
+		local aArgs = split(sArgs, ",");
+		local sCommand = aArgs[0];
+		local sValue, aArgs, Function, bInputHandle, bInputValue, aArgsTemp;
+
+		foreach (command in g_aUserCommands)
+		{
+			if (sCommand == command.GetCommand())
+			{
+				AnalyzeCommand(command, sArgs, hPlayer, ",");
+			}
+		}
+	}
+}
+
 }
 
 RegisterLoopFunction("OnTickCall", 0.01);
 RegisterOnTickFunction("ButtonsListener_Think");
 RegisterOnTickFunction("InjectAdditionalClassMethods_Think");
 
-HookEvent("player_say", OnPlayerSay);
-HookEvent("round_start", OnRoundStart);
+HookEvent("player_say", LOU_OnPlayerSay);
+HookEvent("round_start", LOU_OnRoundStart);
+HookEvent("round_end", LOU_OnRoundEnd);
+
+if (!g_sMapName)
+{
+	function GetQueryData(queryData)
+	{
+		if (queryData["concept"] == "GetQueryData")
+			::g_sMapName = queryData["map"];
+
+		return false;
+	}
+
+	if (!("QueryDataRules" in this))
+	{
+		QueryDataRules <- true;
+		g_rr.rr_ProcessRules([
+			{
+				name = "QueryData"
+				criteria = [["concept", "GetQueryData"], [GetQueryData]]
+				responses = [{scenename = ""}]
+				group_params = g_rr.RGroupParams({ permitrepeats = true, sequential = false, norepeat = false })
+			}
+		]);
+	}
+
+	if (Entities.FindByClassname(null, "func_orator"))
+	{
+		EntFire("func_orator", "SpeakResponseConcept", "GetQueryData");
+	}
+	else
+	{
+		local orator;
+		if (orator = SpawnEntityFromTable("func_orator", { targetname = "dummy_orator", origin = Vector(0,0,0), angles = Vector(0,0,0) }))
+		{
+			DoEntFire("!self", "SpeakResponseConcept", "GetQueryData", 0.0, null, orator);
+			DoEntFire("!self", "Kill", "", 0.0, null, orator);
+		}
+	}
+}
 
 /*===============================*\
-*         Math Functions        *
+ *         Math Functions        *
 \*===============================*/
 
 /** If the value is not a number
@@ -3215,7 +3345,7 @@ function Math::NormalizeAngle(flAngle)
 }
 
 /*===============================*\
-*   Additional Vector Methods   *
+ *   Additional Vector Methods   *
 \*===============================*/
 
 /** Overload of '/' operator
@@ -3439,7 +3569,7 @@ function VectorBetween(vector_min, vector_max, vector)
 }
 
 /*===============================*\
-*   Additional QAngle Methods   *
+ *   Additional QAngle Methods   *
 \*===============================*/
 
 /** Returns the normalized angles of the player's pov
