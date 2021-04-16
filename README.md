@@ -13,6 +13,8 @@ IncludeScript("lib_utils", getroottable());
 ```
 
 # Main features
+Provides 'interface' for creating Script Plugins that won't conflict with each other
+
 Hook game events easier
 
 Register chat/user commands
