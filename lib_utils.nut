@@ -402,20 +402,20 @@ enum eUpgrade
 
 enum eInventoryWeapon
 {
-	Primary = 0,
+	Primary,
 	Secondary
 }
 
 enum eTeam
 {
-	Everyone = 0,
+	Everyone,
 	Survivor,
 	Infected
 }
 
 enum eButtonType
 {
-	Pressed = 0,
+	Pressed,
 	Released,
 	Hold
 }
