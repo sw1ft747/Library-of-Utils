@@ -1,26 +1,6 @@
-/** Squirrel
-* Library of Utils
-*
-* Copyright (c) 2019-2021 Sw1ft >> http://steamcommunity.com/profiles/76561198397776991
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-* SOFTWARE.
-*/
+// Squirrel
+// Library of Utils
+// Author: Sw1ft >> http://steamcommunity.com/profiles/76561198397776991
 
 /*===============================*\
  *       List of Constants       *
@@ -365,6 +345,7 @@ const PHYS_BLOCKER_ALL_SI = 3
 const LF_PREFIX = "lf_"
 const LIB_DATA_FOLDER = "lib_utils/"
 const CMD_EMPTY_ARGUMENT = "__STRING_EMPTY_ARGUMENT"
+const FLT_EPSILON = 0.0000001192092896;
 
 const HIDE_HUD_NONE = 0
 const HIDE_HUD_WEAPON_SELECTION = 1
@@ -1062,8 +1043,28 @@ ifaces_initialized <- true;
 }
 
 /*===============================*\
- *         Functions             *
+ *           Functions           *
 \*===============================*/
+
+/** Convert string to integer
+* Signature: int str_to_int(string value)
+*/
+
+function str_to_int(value)
+{
+    try { return value.tointeger(); }
+    catch (exception) return 0;
+}
+
+/** Convert string to float
+* Signature: float str_to_float(string value)
+*/
+
+function str_to_float(value)
+{
+    try { return value.tofloat(); }
+    catch (exception) return 0.0;
+}
 
 /** Print format
 * Signature: void printf(string message, any args)
@@ -1171,6 +1172,7 @@ function IsFunctionExist(sFunction)
 	if (typeof sFunction != "string")
 	{
 		printl("[IsFunctionExist] Wrong type of variable");
+		return false;
 	}
 
 	local aString = split(sFunction, "(");
@@ -1480,9 +1482,8 @@ function GetHostPlayer()
 		while (idx < NetProps.GetPropArraySize(hPlayerManager, "m_listenServerHost"))
 		{
 			if (NetProps.GetPropIntArray(hPlayerManager, "m_listenServerHost", idx))
-			{
 				return PlayerInstanceFromIndex(idx);
-			}
+
 			idx++;
 		}
 	}
@@ -2435,7 +2436,11 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 						compilestring("return " + sFunction)().acall(aInputArgs);
 				}, this["__loop_params"].__func, this["__loop_params"].__args);
 			}
-			else CallScriptFunction(sFunction, flRefireTime, self, self);
+			else 
+			{
+				CallScriptFunction(sFunction, flRefireTime, self, self);
+			}
+
 			CallScriptFunction("Think", flRefireTime, self, self);
 		});
 
@@ -2445,7 +2450,11 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 				compilestring("return " + sFunction)().acall(aInputArgs);
 			}, sFunction, __loop_func.GetInputArguments());
 		}
-		else CallScriptFunction(sFunction, 0.01, hTimer, hTimer);
+		else
+		{
+			CallScriptFunction(sFunction, 0.01, hTimer, hTimer);
+		}
+		
 		CallScriptFunction("Think", 0.01, hTimer, hTimer);
 		
 		if (vargv.len() > 0)
@@ -2942,7 +2951,8 @@ function OnTickCall()
 		try {
 			g_aOnTickFunctions[i].GetCallingFunction().acall(g_aOnTickFunctions[i].GetInputArguments());
 		}
-		catch (error) {
+		catch (exception) {
+			printl("[OnTickFunction Watchdog] " + exception);
 			printl("[OnTickFunction Watchdog] An error has occurred, on tick function has been removed");
 			g_aOnTickFunctions.remove(i);
 			i--;
@@ -2956,7 +2966,8 @@ function OnTickCall()
 			try {
 				g_aTimers[idx].GetCallingFunction().acall(g_aTimers[idx].GetInputArguments());
 			}
-			catch (error) {
+			catch (exception) {
+				printl("[Timer Watchdog] " + exception);
 				printl("[Timer Watchdog] An error has occurred, calling task has been removed");
 			}
 
@@ -2986,23 +2997,28 @@ function OnTickCall()
 				case "integer":
 					NewValue = NewValue.tointeger();
 					CurrentValue = CurrentValue.tointeger();
+
 					if (cvar.m_flMinValue != null && cvar.m_flMaxValue != null)
 					{
 						min = cvar.m_flMinValue.tointeger();
 						max = cvar.m_flMaxValue.tointeger();
+
 						if (CurrentValue < min || CurrentValue > max)
 							bProhibitChangeHook = true;
+						
 						NewValue = Math.Clamp(NewValue, min, max);
 					}
 					else if (cvar.m_flMinValue != null && cvar.m_flMaxValue == null)
 					{
 						min = cvar.m_flMinValue.tointeger();
+
 						if (CurrentValue < min) bProhibitChangeHook = true;
 						if (NewValue < min) NewValue = min;
 					}
 					else if (cvar.m_flMinValue == null && cvar.m_flMaxValue != null)
 					{
 						max = cvar.m_flMaxValue.tointeger();
+
 						if (CurrentValue > max) bProhibitChangeHook = true;
 						if (NewValue > max) NewValue = max;
 					}
@@ -3013,9 +3029,12 @@ function OnTickCall()
 					max = cvar.m_flMaxValue;
 					NewValue = NewValue.tofloat();
 					CurrentValue = CurrentValue.tofloat();
+
 					if (cvar.m_flMinValue != null && cvar.m_flMaxValue != null)
 					{
-						if (CurrentValue < min || CurrentValue > max) bProhibitChangeHook = true;
+						if (CurrentValue < min || CurrentValue > max)
+							bProhibitChangeHook = true;
+						
 						NewValue = Math.Clamp(NewValue, min, max);
 					}
 					else if (cvar.m_flMinValue != null && cvar.m_flMaxValue == null)
@@ -3031,7 +3050,7 @@ function OnTickCall()
 					break;
 				}
 			}
-			catch (error) {
+			catch (exception) {
 				cvar.SetValue(CurrentValue);
 				continue;
 			}
@@ -3130,12 +3149,12 @@ function ButtonsListener_Think()
 {
 	if (g_aButtonsListener.len() > 0)
 	{
-		local hPlayer, team;
+		local hPlayer;
 		while (hPlayer = Entities.FindByClassname(hPlayer, "player"))
 		{
 			foreach (button in g_aButtonsListener)
 			{
-				team = button.GetTeam();
+				local team = button.GetTeam();
 
 				if (team == eTeam.Everyone)
 					CheckButtons(hPlayer, button);
@@ -3154,9 +3173,12 @@ function CheckButtons(hPlayer, button)
 	local button_type = button.GetType();
 	local idx = hPlayer.GetEntityIndex();
 
-	if (button_type == eButtonType.Pressed) buttons = NetProps.GetPropInt(hPlayer, "m_afButtonPressed");
-	else if (button_type == eButtonType.Released) buttons = NetProps.GetPropInt(hPlayer, "m_afButtonReleased");
-	else buttons = NetProps.GetPropInt(hPlayer, "m_nButtons");
+	if (button_type == eButtonType.Pressed)
+		buttons = NetProps.GetPropInt(hPlayer, "m_afButtonPressed");
+	else if (button_type == eButtonType.Released)
+		buttons = NetProps.GetPropInt(hPlayer, "m_afButtonReleased");
+	else
+		buttons = NetProps.GetPropInt(hPlayer, "m_nButtons");
 
 	if (buttons & button.GetButton()) button.GetCallingFunction()(hPlayer);
 }
@@ -3277,7 +3299,7 @@ function Math::Between(value, min, max)
 }
 
 /** Get the sign of value
-* Signature: bool Math.Sign(float value)
+* Signature: int Math.Sign(float value)
 */
 
 function Math::Sign(value)
@@ -3286,7 +3308,7 @@ function Math::Sign(value)
 }
 
 /** Get the minimum value
-* Signature: bool Math.Min(float a, float b)
+* Signature: float Math.Min(float a, float b)
 */
 
 function Math::Min(a, b)
@@ -3295,7 +3317,7 @@ function Math::Min(a, b)
 }
 
 /** Get the maximum value
-* Signature: bool Math.Max(float a, float, b)
+* Signature: float Math.Max(float a, float, b)
 */
 
 function Math::Max(a, b)
@@ -3373,7 +3395,7 @@ function Vector::IsZero(flTolerance = 0.001)
 
 function Vector::Normalize()
 {
-	return this.Scale(1.0 / this.Length());
+	return this.Scale(1.0 / (FLT_EPSILON + this.Length()));
 }
 
 /** Returns the projection of vector from direction
@@ -3616,7 +3638,7 @@ function RotateOrientationWithQuaternion(eAngles)
 }
 
 /*=================================*\
-*  Additional Quaternion Methods  *
+ *  Additional Quaternion Methods  *
 \*=================================*/
 
 /** Negating the imaginary part
@@ -3706,6 +3728,7 @@ function QuaternionSlerp(q1, q2, t, bShortWay)
 			flCosAngle *= -1;
 		}
 	}
+
 	if (abs(flCosAngle) >= 1.0) return q1;
 
 	local flAngle = acos(flCosAngle);
