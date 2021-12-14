@@ -1,15 +1,15 @@
 # Library of Utils
-Multifunctional VScript library for Left 4 Dead 2 scripting
+Multifunctional VScript library for Left 4 Dead 2
 
-Description of each function is contained in **lib_utils.nut** file
+Description of each function is contained in the source files
 
 # Installation
-Download and place **lib_utils.nut** file in ***Left 4 Dead 2/left4dead2/scripts/vscripts*** folder
+Download and place **lib_utils** folder in ***Left 4 Dead 2/left4dead2/scripts/vscripts*** folder
 
 # Including in the game
 The library must be included in the root table, example:
 ```squirrel
-IncludeScript("lib_utils", getroottable());
+IncludeScript("lib_utils/lib", getroottable());
 ```
 
 # Main features
@@ -24,6 +24,8 @@ Register buttons listener
 Register console variables
 
 Useful math and vector math functions
+
+Additional matrix classes
 
 New methods for Vector, QAngle, Quaternion and CTerrorPlayer classes
 
