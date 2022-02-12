@@ -1,4 +1,4 @@
-// Matrix Classes
+// Matrix Module
 // Author: Sw1ft >> http://steamcommunity.com/profiles/76561198397776991
 
 /*===============================*\
@@ -6,7 +6,7 @@
 \*===============================*/
 
 /** Class matrix3x4
-* Signature: class matrix3x4(any args: { array of arrays 3x4 } or { CBaseEntity } or { Vector, QAngle (optional), float (optional) })
+* Signature: class matrix3x4(any args: { array of arrays (3x4) } or { CBaseEntity entity } or { Vector pos, QAngle angle (optional), float scale (optional) })
 */
 
 class matrix3x4
@@ -24,7 +24,7 @@ class matrix3x4
 		{
 			local sType = typeof vargv[0];
 
-			if (sType == "array") // One array of arrays of values 3x4
+			if (sType == "array") // One array of arrays of values (3x4)
 			{
 				local aMatrix = vargv[0];
 
@@ -39,7 +39,7 @@ class matrix3x4
 
 				matrix = aMatrix;
 			}
-			else if (vargv[0] instanceof matrix3x4) // matrix3x4
+			else if (typeof vargv[0] == "matrix3x4") // matrix3x4
 			{
 				matrix = vargv[0].CloneMatrix();
 			}
@@ -129,9 +129,9 @@ class matrix3x4
 
 	function SetRotation(eAngles)
 	{
-		local flPitch = eAngles.x * PI / 180.0;
-		local flYaw = eAngles.y * PI / 180.0;
-		local flRoll = eAngles.z * PI / 180.0;
+		local flPitch = eAngles.x * Math.Deg2Rad;
+		local flYaw = eAngles.y * Math.Deg2Rad;
+		local flRoll = eAngles.z * Math.Deg2Rad;
 
 		local sy = sin(flYaw), cy = cos(flYaw);
 		local sp = sin(flPitch), cp = cos(flPitch);
@@ -236,46 +236,36 @@ class matrix3x4
 	{
 		local angles = QAngle();
 
-		local forward = Vector();
-		local left = Vector();
-		local up = Vector();
-
 		//
 		// Extract the basis vectors from the matrix. Since we only need the Z
 		// component of the up vector, we don't get X and Y.
 		//
 
-		forward.x = matrix[0][0];
-		forward.y = matrix[1][0];
-		forward.z = matrix[2][0];
-		
-		left.x = matrix[0][1];
-		left.y = matrix[1][1];
-		left.z = matrix[2][1];
+		local forward = Vector( matrix[0][0], matrix[1][0], matrix[2][0] );
+		local left = Vector( matrix[0][1], matrix[1][1], matrix[2][1] );
+		local up = Vector( 0, 0, matrix[2][2] );
 
-		up.z = matrix[2][2];
-
-		local xyDist = sqrt( forward.x * forward.x + forward.y * forward.y );
+		local xyDist = forward.Length2D();
 		
 		// enough here to get angles?
 		if ( xyDist > 0.001 )
 		{
 			// (yaw)	y = ATAN( forward.y, forward.x );		-- in our space, forward is the X axis
-			angles.y = atan2( forward.y, forward.x ) * 180.0 / PI;
+			angles.y = atan2( forward.y, forward.x ) * Math.Rad2Deg;
 
 			// (pitch)	x = ATAN( -forward.z, sqrt(forward.x*forward.x+forward.y*forward.y) );
-			angles.x = atan2( -forward.z, xyDist ) * 180.0 / PI;
+			angles.x = atan2( -forward.z, xyDist ) * Math.Rad2Deg;
 
 			// (roll)	z = ATAN( left.z, up.z );
-			angles.z = atan2( left.z, up.z ) * 180.0 / PI;
+			angles.z = atan2( left.z, up.z ) * Math.Rad2Deg;
 		}
 		else	// forward is mostly Z, gimbal lock-
 		{
 			// (yaw)	y = ATAN( -left.x, left.y );			-- forward is mostly z, so use right for yaw
-			angles.y = atan2( -left.x, left.y ) * 180.0 / PI;
+			angles.y = atan2( -left.x, left.y ) * Math.Rad2Deg;
 
 			// (pitch)	x = ATAN( -forward.z, sqrt(forward.x*forward.x+forward.y*forward.y) );
-			angles.x = atan2( -forward.z, xyDist ) * 180.0 / PI;
+			angles.x = atan2( -forward.z, xyDist ) * Math.Rad2Deg;
 
 			// Assume no roll in this case as one degree of freedom has been lost (i.e. yaw == roll)
 			angles.z = 0.0;
@@ -681,7 +671,7 @@ class matrix3x4
 		matrix = original.CloneMatrix();
 	}
 
-	function _tyoeof() // called on typeof()
+	function _typeof() // called on typeof()
 	{
 		return "matrix3x4";
 	}

@@ -2,10 +2,31 @@
 // Author: Sw1ft >> http://steamcommunity.com/profiles/76561198397776991
 
 /*===============================*\
+ *  Validate that current scope  *
+ *       is the root table       *
+\*===============================*/
+
+if (this != getroottable())
+	throw "the library must be included in the root table";
+
+/*===============================*\
+ *   Include Library once when   *
+ * Scripted Mode was initialized *
+\*===============================*/
+
+__dummy_event_listener <- { OnGameEvent___dummy_event = function(tParams) {} }
+
+if ("GameEventCallbacks" in this && typeof GameEventCallbacks == "table" && "__dummy_event" in GameEventCallbacks)
+	return;
+else
+	__CollectEventCallbacks(__dummy_event_listener, "OnGameEvent_", "GameEventCallbacks", RegisterScriptGameEventListener);
+
+/*===============================*\
  *      Include Sub-Modules      *
 \*===============================*/
 
-IncludeScript("lib_utils/matrix", this);
+DoIncludeScript("lib_utils/math", this);
+DoIncludeScript("lib_utils/matrix", this);
 
 /*===============================*\
  *       List of Constants       *
@@ -336,21 +357,42 @@ const HUD_PRINTCENTER = 4
  *   Enumerations & Constants    *
 \*===============================*/
 
+const LU_VERSION = "1.0.0"
+const LU_DATA_FOLDER = "lib_utils/"
+
 const MAXENTS = 2048
 const MAXCLIENTS = 32
+
 const ZOMBIE_NONE = -1
 const ZOMBIE_SURVIVOR = 9
+
 const TEAM_SPECTATOR = 1
 const TEAM_SURVIVOR = 2
 const TEAM_INFECTED = 3
+const TEAM_EVERYONE = 4
+
+const BUTTON_STATE_PRESSED = 0
+const BUTTON_STATE_RELEASED = 0
+const BUTTON_STATE_HOLD = 0
+
 const PHYS_BLOCKER_EVERYONE = 0
 const PHYS_BLOCKER_SURVIVORS = 1
 const PHYS_BLOCKER_SI = 2
 const PHYS_BLOCKER_ALL_SI = 3
-const LF_PREFIX = "lf_"
-const LIB_DATA_FOLDER = "lib_utils/"
-const CMD_EMPTY_ARGUMENT = "__STRING_EMPTY_ARGUMENT"
-const FLT_EPSILON = 0.0000001192092896;
+
+const UPGRADE_NONE = 0
+const UPGRADE_INCENDIARY = 1
+const UPGRADE_EXPLOSIVE = 2
+const UPGRADE_LASER = 4
+
+const INVENTORY_WEAPON_PRIMARY = 0
+const INVENTORY_WEAPON_SECONDARY = 1
+
+const LOOPFUNC_PREFIX = "lf_"
+const DEFAULT_INTERVAL_PER_TICK = 0.033333333333333333
+
+const TRACE_MASK_SHOT_IGNORE_WINDOW = 1174421505
+const TRACE_MAX_DISTANCE = 1e+37
 
 const HIDE_HUD_NONE = 0
 const HIDE_HUD_WEAPON_SELECTION = 1
@@ -365,51 +407,10 @@ const HIDE_HUD_CROSSHAIR = 256
 const HIDE_HUD_VEHICLE_CROSSHAIR = 512
 const HIDE_HUD_IN_VEHICLE = 1024
 
-const HOOK_CONTINUE = 0; // continue executing further hook functions
-const HOOK_OVERRIDE = 1; // override return value of general hook function
-const HOOK_STOP = 2; // stop executing further hook functions
-const HOOK_STOP_SINGLE = 3; // can be used to don't call only specified hook function on specified interval
-
-enum eTrace
-{
-	Mask_All = -1,
-	Mask_NPC_Solid = 33701899,
-	Mask_Player_Solid = 33636363,
-	Mask_Shot = 1174421507,
-	Mask_Visible_And_NPCS = 33579137,
-	Mask_Visible = 33579073,
-	Distance = 1000000000,
-	Type_Hit = 1,
-	Type_Pos = 2
-}
-
-enum eUpgrade
-{
-	None = 0,
-	Incendiary = 1,
-	Explosive = 2,
-	Laser = 4
-}
-
-enum eInventoryWeapon
-{
-	Primary,
-	Secondary
-}
-
-enum eTeam
-{
-	Everyone,
-	Survivor,
-	Infected
-}
-
-enum eButtonType
-{
-	Pressed,
-	Released,
-	Hold
-}
+const HOOK_CONTINUE = 0 // continue executing further hook functions
+const HOOK_OVERRIDE = 1 // override return value of general hook function
+const HOOK_STOP = 2 // stop executing further hook functions
+const HOOK_STOP_SINGLE = 3 // can be used to don't call only specified hook function on a specified interval
 
 /*===============================*\
  *         Interfaces            *
@@ -468,14 +469,14 @@ class CLoopFunction
 		local aArgs = [this];
 		aArgs.extend(aInputArgs);
 
-		m_aInputArgs = aArgs;
+		m_aArgs = aArgs;
 		m_sFunctionName = sFunction;
-		m_sTimerName = LF_PREFIX + sFunction.tolower();
+		m_sTimerName = LOOPFUNC_PREFIX + sFunction.tolower();
 
 		if (flInterval != null) m_flInterval = flInterval;
 	}
 
-	function GetInputArguments() { return m_aInputArgs; }
+	function GetArguments() { return m_aArgs; }
 
 	function GetFunctionName() { return m_sFunctionName; }
 
@@ -484,7 +485,7 @@ class CLoopFunction
 	function GetRefireTime() { return m_flInterval; }
 
 	m_sFunctionName = null;
-	m_aInputArgs = null;
+	m_aArgs = null;
 	m_sTimerName = null;
 	m_flInterval = null;
 }
@@ -500,46 +501,18 @@ class COnTickFunction
 		local aArgs = [this];
 		aArgs.extend(aInputArgs);
 
-		m_aInputArgs = aArgs;
+		m_aArgs = aArgs;
 		m_sFunctionName = sFunction;
 	}
 
-	function GetInputArguments() { return m_aInputArgs; }
+	function GetArguments() { return m_aArgs; }
 
 	function GetCallingFunction() { return compilestring("return " + m_sFunctionName)(); }
 
 	function GetFunctionName() { return m_sFunctionName; }
 
 	m_sFunctionName = null;
-	m_aInputArgs = null;
-}
-
-/** Class Chat Command
-* Signature: class CChatCommand(string command, function callFunction, bool bInputPlayerHandle, bool bInputValue)
-*/
-
-class CChatCommand
-{
-	constructor(sCommand, Function, bInputPlayerHandle, bInputValue)
-	{
-		m_sCommand = sCommand;
-		m_Function = Function;
-		m_bInputPlayerHandle = bInputPlayerHandle;
-		m_bInputValue = bInputValue;
-	}
-
-	function GetCommand() { return m_sCommand; }
-
-	function GetCallingFunction() { return m_Function; }
-
-	function GetInputPlayerHandle() { return m_bInputPlayerHandle; }
-
-	function GetInputValue() { return m_bInputValue; }
-
-	m_sCommand = null;
-	m_Function = null;
-	m_bInputPlayerHandle = false;
-	m_bInputValue = false;
+	m_aArgs = null;
 }
 
 /** Class Button Listener
@@ -558,13 +531,13 @@ class CButtonListener
 
 	function GetCallingFunction() { return compilestring("return " + m_sFunctionName)(); }
 
-	function GetFunction() { return m_sFunctionName; }
+	function GetFunctionName() { return m_sFunctionName; }
 
 	function GetButton() { return m_nButtons; }
 
 	function GetTeam() { return m_iTeam; }
 
-	function GetType() { return m_iPressType; }
+	function GetPressType() { return m_iPressType; }
 
 	m_sFunctionName = null;
 	m_nButtons = null;
@@ -572,32 +545,60 @@ class CButtonListener
 	m_iTeam = null;
 }
 
+/** Class Chat Command
+* Signature: class CChatCommand(string command, function callFunction, bool bProcessCaller, bool bProcessArguments)
+*/
+
+class CChatCommand
+{
+	constructor(sCommand, callFunc, bProcessCaller, bProcessArguments)
+	{
+		m_sCommand = sCommand;
+		m_Function = callFunc;
+		m_bProcessCaller = bProcessCaller;
+		m_bProcessArguments = bProcessArguments;
+	}
+
+	function GetCommand() { return m_sCommand; }
+
+	function GetCallingFunction() { return m_Function; }
+
+	function ProcessCaller() { return m_bProcessCaller; }
+
+	function ProcessArguments() { return m_bProcessArguments; }
+
+	m_sCommand = null;
+	m_Function = null;
+	m_bProcessCaller = true;
+	m_bProcessArguments = false;
+}
+
 /** Class User Command
-* Signature: class CUserCommand(string command, function callFunction, bool bInputValue, bool bInputPlayerHandle)
+* Signature: class CUserCommand(string command, function callFunction, bool bProcessCaller, bool bProcessArguments)
 */
 
 class CUserCommand
 {
-	constructor(sCommand, hCallingFunction, bInputValue, bInputPlayerHandle)
+	constructor(sCommand, callFunc, bProcessCaller, bProcessArguments)
 	{
 		m_sCommand = sCommand;
-		m_Function = hCallingFunction;
-		m_bInputValue = bInputValue;
-		m_bInputPlayerHandle = bInputPlayerHandle;
+		m_Function = callFunc;
+		m_bProcessArguments = bProcessArguments;
+		m_bProcessCaller = bProcessCaller;
 	}
-
-	function GetCallingFunction() { return m_Function; }
-
-	function GetInputPlayerHandle() { return m_bInputPlayerHandle; }
-
-	function GetInputValue() { return m_bInputValue; }
 
 	function GetCommand() { return m_sCommand; }
 
+	function GetCallingFunction() { return m_Function; }
+
+	function ProcessCaller() { return m_bProcessCaller; }
+
+	function ProcessArguments() { return m_bProcessArguments; }
+
 	m_sCommand = null;
 	m_Function = null;
-	m_bInputValue = false;
-	m_bInputPlayerHandle = true;
+	m_bProcessCaller = true;
+	m_bProcessArguments = false;
 }
 
 /** Class ConVar
@@ -669,8 +670,8 @@ class CTimer
 		local aArgs = [this];
 		aArgs.extend(aInputArgs);
 
-		m_aInputArgs = aArgs;
-		m_sIdentifier = UniqueString();
+		m_aArgs = aArgs;
+		m_iIdentifier = ::g_iUniqueIDs++;
 		m_Function = Function;
 		m_flCallTime = flCallTime;
 	}
@@ -679,14 +680,14 @@ class CTimer
 
 	function GetCallTime() { return m_flCallTime; }
 
-	function GetInputArguments() { return m_aInputArgs; }
+	function GetArguments() { return m_aArgs; }
 
-	function GetIdentifier() { return m_sIdentifier; }
+	function GetIdentifier() { return m_iIdentifier; }
 
-	m_sIdentifier = null;
+	m_iIdentifier = null;
 	m_flCallTime = null;
 	m_Function = null;
-	m_aInputArgs = null;
+	m_aArgs = null;
 }
 
 /*===============================*\
@@ -694,8 +695,10 @@ class CTimer
 \*===============================*/
 
 if (!("g_sMapName" in this)) g_sMapName <- null;
+if (!("g_iUniqueIDs" in this)) g_iUniqueIDs <- 0;
 
 if (!("hook_UserConsoleCommand" in this)) hook_UserConsoleCommand <- false;
+if (!("hook_InterceptChat" in this)) hook_InterceptChat <- false;
 if (!("hook_AllowBash" in this)) hook_AllowBash <- false;
 if (!("hook_AllowTakeDamage" in this)) hook_AllowTakeDamage <- false;
 if (!("hook_BotQuery" in this)) hook_BotQuery <- false;
@@ -715,13 +718,8 @@ if (!("g_hBroadcastClientCommand" in this) || ("g_hBroadcastClientCommand" in th
 \*===============================*/
 
 g_CallBackEvents <- {};
-VMath <- {};
-
-Math <-
-{
-	Deg2Rad = PI / 180.0
-	Rad2Deg = 180.0 / PI
-};
+g_ChatCommands <- {};
+g_UserCommands <- [];
 
 g_Hooks <-
 {
@@ -769,12 +767,23 @@ g_Hooks <-
 	// Signature: void OnExtendClassMethods()
 	OnExtendClassMethods = []
 
+	// Signature: void OnSetEntityAnglesCompleted(handle entity)
+	OnSetEntityAnglesCompleted = []
+
 	// Signature: HookReturnCode OnIteratePlayersPerTick(handle player)
 	// Hook codes:
 	// HOOK_CONTINUE - continue executing
 	// HOOK_STOP - stop executing further hook functions on this tick
 	// HOOK_STOP_SINGLE - stop executing current hook function on this tick
 	OnIteratePlayersPerTick = []
+
+	// Signature: HookReturnCode OnInterceptChat(table showMessage, string message, handle player) | Required ScriptedMode
+	// Table 'showMessage' contains key 'value' that can be changed, 'true' to show message to other clients, otherwise 'false'
+	// Hook return codes:
+	// HOOK_CONTINUE - continue executing
+	// HOOK_OVERRIDE - override return value (showMessage.value), further hook functions won't be able to override it
+	// HOOK_STOP - stop executing the general hook function, return value can be overriden, but further hook functions won't be called
+	OnInterceptChat = []
 
 	// Signature: HookReturnCode OnAllowBash(table bashReturnCode, handle basher, handle bashee) | Required ScriptedMode
 	// Table 'bashReturnCode' contains key 'value' that can be changed, see constants ALLOW_BASH_*
@@ -875,12 +884,9 @@ g_ScriptPluginsHelper <-
 
 if (!("g_aScriptPlugins" in this)) g_aScriptPlugins <- [];
 
-g_bAllowChangeCameraAngles <- array(MAXENTS + 1, true);
 g_aLoopFunctions <- [];
 g_aOnTickFunctions <- [];
-g_aChatCommands <- [];
 g_aButtonsListener <- [];
-g_aUserCommands <- [];
 g_aConVars <- [];
 g_aTimers <- [];
 
@@ -940,7 +946,7 @@ function SayMsg(sMsg)
 	Say(null, "" + sMsg, false);
 }
 
-/** Send error message
+/** Send an error message
 * Signature: void errorl(string message)
 */
 
@@ -949,21 +955,51 @@ function errorl(sMsg)
 	error(sMsg + "\n");
 }
 
+/** Test a value. If assertion fails, prints message in the console
+* Signature: void Assert(bool value, string message, bool throwError)
+*/
+
+function Assert(bAssertion, sMsg = null, bThrowError = false)
+{
+	if (!bAssertion)
+	{
+		if (bThrowError)
+		{
+			if (sMsg != null)
+				throw "ASSERTION FAILED: " + sMsg;
+			else
+				throw "ASSERTION FAILED";
+		}
+		else
+		{
+			if (sMsg != null)
+				error("\nASSERTION FAILED [" + sMsg + "]\n\n");
+			else
+				error("\nASSERTION FAILED\n\n");
+			
+			local tStackInfo = getstackinfos(2);
+
+			error("CALLSTACK\n*FUNCTION [" + tStackInfo["func"] + "()] " + tStackInfo["src"] + " line [" + tStackInfo["line"] + "]\n\n");
+			error("LOCALS\n");
+
+			foreach (k, v in tStackInfo["locals"])
+				error("[" + k + "] " + v + "\n");
+		}
+	}
+}
+
 /** Set a value for a console variable or return the current value
 * Signature: void/string/float cvar(string convar, any value, bool bReturnString)
 */
 
-function cvar(sName = null, value = null, bReturnString = true)
+function cvar(sName, value = null, bReturnString = true)
 {
-	if (sName != null)
-	{
-		if (value != null)
-			Convars.SetValue(sName.tostring(), value.tostring());
-		else if (bReturnString)
-			return Convars.GetStr(sName.tostring());
-		else
-			return Convars.GetFloat(sName.tostring());
-	}
+	if (value != null)
+		Convars.SetValue(sName.tostring(), value.tostring());
+	else if (bReturnString)
+		return Convars.GetStr(sName.tostring());
+	else
+		return Convars.GetFloat(sName.tostring());
 }
 
 /** Interpreting ToKVString method
@@ -972,29 +1008,23 @@ function cvar(sName = null, value = null, bReturnString = true)
 
 function kvstr(__instance)
 {
-	if (__instance instanceof Vector)
-		return __instance.x + " " + __instance.y + " " + __instance.z;
-
-	if (__instance instanceof QAngle)
+	if (__instance instanceof Vector || __instance instanceof QAngle)
 		return __instance.x + " " + __instance.y + " " + __instance.z;
 
 	if (__instance instanceof Vector2D)
 		return __instance.x + " " + __instance.y;
 
-	if (__instance instanceof Vector4D)
+	if (__instance instanceof Vector4D || __instance instanceof Quaternion)
 		return __instance.x + " " + __instance.y + " " + __instance.z + " " + __instance.w;
 
-	if (__instance instanceof Quaternion)
-		return __instance.x + " " + __instance.y + " " + __instance.z + " " + __instance.w;
-
-	return "0 0 0";
+	return "0";
 }
 
 /** Draw a point
 * Signature: void Mark(Vector origin, float duration, Vector min, Vector max, int r, int g, int b, int alpha)
 */
 
-function Mark(vecPos, flDuration = 5.0, vecMins = Vector(2, 2, 2), vecMaxs = Vector(-2, -2, -2), iRed = 232, iGreen = 0, iBlue = 232, iAlpha = 255)
+function Mark(vecPos, flDuration = 5.0, vecMins = Vector(-2, -2, -2), vecMaxs = Vector(2, 2, 2), iRed = 232, iGreen = 0, iBlue = 232, iAlpha = 255)
 {
 	DebugDrawBox(vecPos, vecMins, vecMaxs, iRed, iGreen, iBlue, iAlpha, flDuration);
 }
@@ -1036,15 +1066,16 @@ function IsFunctionExist(sFunction)
 		foreach (val in aString)
 		{
 			local func = compilestring("return " + val)();
+
 			if (typeof func == "function" || typeof func == "native function")
 				return true;
 		}
-		return false;
 	}
 	catch (val)
 	{
-		return false;
 	}
+
+	return false;
 }
 
 /** Get key's value from given scope
@@ -1072,22 +1103,7 @@ function GetValueKey(value, scope = null)
 	
 	foreach (key, val in scope)
 		if (value == val)
-			return ""+key;
-}
-
-/** Accept an entity input
-* Signature: void AcceptEntityInput(handle caller, string command, string value, handle activator, float delay)
-*/
-
-function AcceptEntityInput(hEntity, sInput, sValue = "", flDelay = 0.0, hActivator = null)
-{
-	if (!hEntity)
-	{
-		printl("[AcceptEntityInput] Entity doesn't exist");
-		return;
-	}
-
-	DoEntFire("!self", sInput.tostring(), sValue.tostring(), flDelay.tofloat(), hActivator, hEntity);
+			return "" + key;
 }
 
 /** Run a script code with the delay
@@ -1142,6 +1158,22 @@ function CreateTimer(flDelay, func, ...)
 	printl("[CreateTimer] Wrong type of variable");
 }
 
+/** Remove a timer by given identifier
+* Signature: void RemoveTimerByID(int identifier)
+*/
+
+function RemoveTimerByID(iIdentifier)
+{
+	for (local i = 0; i < g_aTimers.len(); ++i)
+	{
+		if (g_aTimers[i].GetIdentifier() == iIdentifier)
+		{
+			g_aTimers.remove(i);
+			--i;
+		}
+	}
+}
+
 /** Call a function in the next game tick with input variables
 * Signature: CTimer RunNextTickFunction(function callFunction, array args)
 */
@@ -1158,36 +1190,6 @@ function RunNextTickFunction(func, ...)
 	printl("[RunNextTickFunction] Wrong type of variable");
 }
 
-/** Emit a sound
-* Signature: void EmitSound(string soundFile)
-*/
-
-function EmitSound(vecPos, sSound, iRadius = 3000.0)
-{
-	local hEntity = SpawnEntityFromTable("ambient_generic", {
-		origin = vecPos
-		message = sSound
-		radius = iRadius
-		spawnflags = 48
-		health = 100
-	});
-
-	AcceptEntityInput(hEntity, "PlaySound");
-	AcceptEntityInput(hEntity, "Kill");
-}
-
-/** Emit a sound to all players
-* Signature: void EmitSoundToAll(string soundScript)
-*/
-
-function EmitSoundToAll(sSound)
-{
-	local hPlayer;
-
-	while (hPlayer = Entities.FindByClassname(hPlayer, "player"))
-		EmitSoundOnClient(sSound, hPlayer);
-}
-
 /** Is arrays equal
 * Signature: bool IsArraysEqual(array arr1, array arr2)
 */
@@ -1198,120 +1200,6 @@ function IsArraysEqual(a, _a)
 	foreach (idx, val in a) if (_a[idx] != val) return false;
 
 	return true;
-}
-
-/** Create an invisible wall
-* Signature: handle CreateInvisibleWall(string targetname, Vector origin, Vector maxs, Vector mins, int type, bool bEnable)
-*/
-
-function CreateInvisibleWall(sName, vecPos, vecMaxs = Vector(64, 64, 128), vecMins = Vector(-64, -64, 0), iType = PHYS_BLOCKER_EVERYONE, bEnable = true)
-{
-	local hEntity = SpawnEntityFromTable("env_physics_blocker", {
-		origin = vecPos
-		targetname = sName.tostring()
-		initialstate = bEnable.tointeger()
-		blocktype = iType
-	});
-
-	hEntity.__KeyValueFromVector("maxs", vecMaxs);
-	hEntity.__KeyValueFromVector("mins", vecMins);
-
-	hEntity.ValidateScriptScope();
-
-	return hEntity;
-}
-
-/** Convert string to byte string
-* Signature: string EncodeString(string message, bool bStringToFile, string fileName)
-*/
-
-function EncodeString(sInput = null, bStringToFile = false, sFileName = null)
-{
-	if (typeof sInput != "string") return;
-
-	local sOutput = "";
-
-	foreach (symbol in sInput)
-	{
-		symbol = format("x%X", symbol)
-
-		if (symbol.find("FFFFFF") != null)
-			symbol = "x" + symbol.slice(8);
-
-		sOutput += symbol;
-	}
-
-	if (bStringToFile)
-	{
-		if (typeof sFileName != "string")
-			return;
-
-		sOutput = format("\"%s\"", sOutput);
-		sOutput += "\n";
-
-		return StringToFile(sFileName, sOutput);
-	}
-
-	return sOutput;
-}
-
-/** Convert byte string to string
-* Signature: string DecodeString(string message, bool bFileToString, string fileName)
-*/
-
-function DecodeString(sInput = null, bFileToString = false, sFileName = null)
-{
-	if (!bFileToString)
-	{
-		if (typeof sInput != "string")
-			return;
-	}
-
-	if (bFileToString)
-	{
-		if (typeof sFileName != "string")
-			return;
-
-		sInput = compilestring("return " + FileToString(sFileName))();
-	}
-
-	local aInput = split(sInput, "x");
-	local sOutput = "";
-
-	foreach (symbol in aInput)
-	{
-		if (symbol != "x")
-			sOutput += compilestring("return 0x" + symbol)().tochar().tostring();
-	}
-
-	return sOutput;
-}
-
-/** Teleport an entity
-* Signature: void TP(Vector position, Vector/QAngle angles, Vector velocity, bool bVectorDirection)
-*/
-
-function TP(hEntity = null, vecPos = Vector(), eAngles = QAngle(), vecVel = Vector(), bVectorDirection = false)
-{
-	if (hEntity != null)
-	{
-		if (vecPos != null)
-		{
-			hEntity.SetOrigin(vecPos);
-		}
-
-		if (eAngles != null)
-		{
-			if (hEntity.IsPlayer()) hEntity.SetForwardVector(bVectorDirection ? eAngles : eAngles.Forward());
-			else hEntity.SetAngles(bVectorDirection ? VectorToQAngle(eAngles) : eAngles);
-		}
-
-		if (vecVel != null)
-		{
-			if (hEntity.IsPlayer()) hEntity.SetVelocity(vecVel);
-			else hEntity.ApplyAbsVelocityImpulse(vecVel);
-		}
-	}
 }
 
 /** Convert seconds to clock/timer format
@@ -1348,6 +1236,156 @@ function ToClock(flTime = 0.0, bMs = true)
 	return day_dbg + hr_dbg + (min < 10 ? "0" + min : min) + (sec < 10 ? ":0" + sec : ":" + sec) + ms_dbg;
 }
 
+/** Send a server command
+* Signature: void ServerCommand(string command, float delay)
+*/
+
+function ServerCommand(sCommand = "", flDelay = 0.0)
+{
+	AcceptEntityInput(g_hServerCommand, "Command", sCommand.tostring(), flDelay.tofloat(), null);
+	AcceptEntityInput(g_hServerCommand, "Kill", "", flDelay.tofloat(), null);
+}
+
+/** Create "infinite" end point for tracing
+* Signature: Vector Trace_MakeEndPoint(Vector traceStart, Vector traceDirection)
+*/
+
+function Trace_MakeEndPoint(vecStart, vecDir)
+{
+	return vecStart + vecDir.Scale(TRACE_MAX_DISTANCE);
+}
+
+/** Wrapper for TraceLine function
+* Signature: void DoTraceLine(table result, Vector start, Vector end, int masktype, handle ignoreEntity, bool getPlaneNormal, QAngle traceDirection)
+*/
+
+function DoTraceLine(tTraceResult, vecStart, vecEnd, iMask = TRACE_MASK_SHOT, hIgnore = null, bPlaneNormal = false, traceDirection = null)
+{
+	Assert( typeof tTraceResult == "table", "tTraceResult must be passed as empty table", true );
+
+	local tTrace =
+	{
+		start = vecStart
+		end = vecEnd
+		ignore = hIgnore
+		mask = iMask
+	}
+
+	TraceLine(tTrace);
+
+	if (bPlaneNormal)
+	{
+		if (traceDirection == null)
+			traceDirection = (vecEnd - vecStart).VectorToQAngle();
+		
+		local vecPointA, vecPointB;
+
+		local vecDir = traceDirection.Forward();
+		local vecStartShifted = vecStart + traceDirection.Left().Scale(-0.01);
+
+		local tPlaneTrace =
+		{
+			start = vecStartShifted
+			end = vecStartShifted + vecDir.Scale(TRACE_MAX_DISTANCE)
+			ignore = hIgnore
+			mask = iMask
+		}
+
+		TraceLine(tPlaneTrace); vecPointA = tPlaneTrace.pos;
+
+		tPlaneTrace.start = vecStart + traceDirection.Up().Scale(-0.01);
+		tPlaneTrace.end = tPlaneTrace.start + vecDir.Scale(TRACE_MAX_DISTANCE);
+
+		TraceLine(tPlaneTrace); vecPointB = tPlaneTrace.pos;
+		
+		tTraceResult.planenormal <- ((vecPointA - tTrace.pos).Cross(vecPointB - tTrace.pos)).Normalize();
+	}
+	else
+	{
+		tTraceResult.planenormal <- Vector();
+	}
+
+	if (tTrace.hit && tTrace.enthit.GetEntityIndex() != 0)
+		tTraceResult.enthit <- tTrace.enthit;
+	else
+		tTraceResult.enthit <- null;
+	
+	if ("startsolid" in tTrace)
+		tTraceResult.startsolid <- tTrace.startsolid;
+	else
+		tTraceResult.startsolid <- false;
+	
+	tTraceResult.fraction <- tTrace.fraction;
+	tTraceResult.hit <- tTrace.hit;
+	tTraceResult.pos <- tTrace.pos;
+
+	/* Resulting table:
+
+		Vector startpos - start of the TraceLine
+		Vector endpos - end of the TraceLine
+
+		bool hit - if the trace hit something
+
+		Vector pos - hit pos
+		CBaseEntity enthit - the entity hit
+		
+		bool startsolid - if true, the initial point was in a solid area
+		float fraction - how far the trace went before hitting something
+
+		Vector planenormal - the normal vector of the hit plane (will be calculated if bPlaneNormal is true)
+	*/
+}
+
+/*===============================*\
+*    Entity Related Functions    *
+\*===============================*/
+
+/** Accept an entity input
+* Signature: void AcceptEntityInput(handle caller, string command, string value, handle activator, float delay)
+*/
+
+function AcceptEntityInput(hEntity, sInput, sValue = "", flDelay = 0.0, hActivator = null)
+{
+	if (!hEntity)
+	{
+		printl("[AcceptEntityInput] Entity doesn't exist");
+		return;
+	}
+
+	DoEntFire("!self", sInput.tostring(), sValue.tostring(), flDelay.tofloat(), hActivator, hEntity);
+}
+
+/** Teleport an entity
+* Signature: void TP(Vector position, Vector/QAngle angles, Vector velocity, bool bVectorDirection)
+*/
+
+function TP(hEntity, vecPos = Vector(), vecAngles = QAngle(), vecVel = Vector(), bVectorDirection = false)
+{
+	if (hEntity != null)
+	{
+		if (vecPos != null)
+		{
+			hEntity.SetOrigin(vecPos);
+		}
+
+		if (vecAngles != null)
+		{
+			if (hEntity.IsPlayer())
+				hEntity.SetForwardVector(bVectorDirection ? vecAngles : vecAngles.Forward());
+			else
+				hEntity.SetAngles(bVectorDirection ? VectorToQAngle(vecAngles) : vecAngles);
+		}
+
+		if (vecVel != null)
+		{
+			if (hEntity.IsPlayer())
+				hEntity.SetVelocity(vecVel);
+			else
+				hEntity.ApplyAbsVelocityImpulse(vecVel);
+		}
+	}
+}
+
 /** Get an angle between entities
 * Signature: float GetAngleBetweenEntities(handle entity, handle target)
 */
@@ -1372,6 +1410,247 @@ function GetAngleBetweenEntities(hEntity = null, hTarget = null, vecCorrection =
 	return acos(((hEntity.IsPlayer() ? hEntity.EyeAngles() : hEntity.GetAngles()).Forward()).Dot(((_vecPos - vecPos) + vecCorrection).Normalize())) * Math.Rad2Deg;
 }
 
+/** Emit a sound
+* Signature: void EmitSound(string soundFile)
+*/
+
+function EmitSound(vecPos, sSound, iRadius = 3000.0)
+{
+	local hEntity = SpawnEntityFromTable("ambient_generic", {
+		origin = vecPos
+		message = sSound
+		radius = iRadius
+		spawnflags = 48
+		health = 100
+	});
+
+	AcceptEntityInput(hEntity, "PlaySound");
+	AcceptEntityInput(hEntity, "Kill");
+}
+
+/** Emit a sound to all players
+* Signature: void EmitSoundToAll(string soundScript)
+*/
+
+function EmitSoundToAll(sSound)
+{
+	local hPlayer;
+
+	while (hPlayer = Entities.FindByClassname(hPlayer, "player"))
+		EmitSoundOnClient(sSound, hPlayer);
+}
+
+/** Checks if an entity is alive
+* Signature: bool IsEntityAlive(handle entity)
+*/
+
+function IsEntityAlive(hEntity)
+{
+	return NetProps.GetPropInt(hEntity, "m_lifeState") == 0;
+}
+
+/** Attach an entity
+* Signature: void AttachEntity(handle entity, handle target, string attachment, float delay)
+*/
+
+function AttachEntity(hEntity, hEntityToAttach, sAttachment = null, flDelay = 0.0)
+{
+	AcceptEntityInput(hEntityToAttach, "SetParent", "!activator", flDelay, hEntity);
+	if (sAttachment != null) AcceptEntityInput(hEntityToAttach, "SetParentAttachment", sAttachment, flDelay, hEntity);
+}
+
+/** Remove an attachment
+* Signature: void RemoveAttachment(handle entity, handle target, float delay)
+*/
+
+function RemoveAttachment(hEntity, hEntityToUnattach, flDelay = 0.0)
+{
+	AcceptEntityInput(hEntityToUnattach, "ClearParent", "", flDelay, hEntity);
+}
+
+/** Get distance between two entities
+* Signature: float GetDistance(handle entity, handle target, bool bSquared, bool bMethod2D)
+*/
+
+function GetDistanceToEntity(hEntity, hTarget, bSquared = false, bMethod2D = false)
+{
+	local flDistance;
+
+	if (bSquared)
+		flDistance = bMethod2D ? (hEntity.GetOrigin() - hTarget.GetOrigin()).Length2DSqr() : (hEntity.GetOrigin() - hTarget.GetOrigin()).LengthSqr();
+	else
+		flDistance = bMethod2D ? (hEntity.GetOrigin() - hTarget.GetOrigin()).Length2D() : (hEntity.GetOrigin() - hTarget.GetOrigin()).Length();
+
+	return flDistance;
+}
+
+/** Ignite an entity
+* Signature: void Ignite(handle entity, handle attacker, float interval)
+*/
+
+function Ignite(hEntity, hAttacker = null, flInterval = 5.0)
+{
+	if (hEntity.IsPlayer() || hEntity.GetClassname() == "witch")
+		hEntity.TakeDamage(0.01, DMG_BURN, !hAttacker ? hEntity : hAttacker);
+	else
+		AcceptEntityInput(hEntity, "IgniteLifeTime", flInterval.tostring());
+	
+	if (hEntity.IsPlayer() && !hEntity.IsSurvivor())
+	{
+		SetScriptScopeVar(hEntity, "extinguish_time", Time() + flInterval);
+		CreateTimer(flInterval, function(hPlayer){
+			if (hPlayer.IsValid() && hPlayer.IsOnFire() & GetScriptScopeVar(hPlayer, "extinguish_time") <= Time())
+				hPlayer.Extinguish();
+		}, hEntity);
+	}
+}
+
+/** Set entity angles by steps. Returns unique identifier for all timers in case you want to abort the function.
+* Signature: int SetAnglesBySteps(handle entity, QAngle angles, int steps, bool sphericalLerp, bool smoothLerp, float interval)
+*/
+
+function SetAnglesBySteps(hEntity, vecAngles, iSteps, bSlerp = true, bSpline = false, flInterval = DEFAULT_INTERVAL_PER_TICK)
+{
+	Assert(iSteps > 0);
+
+	local vecAnglesStart = hEntity.IsPlayer() ? hEntity.EyeAngles() : hEntity.GetAngles();
+
+	if (!GetScriptScopeVar(hEntity, "__changing_angles") && !OrientationsEqual(vecAngles, vecAnglesStart))
+	{
+		local vecResult;
+		local nID = g_iUniqueIDs;
+
+		local t = 0.0;
+		local dt = 1.0 / iSteps;
+		local flTime = 0.0;
+
+		SetScriptScopeVar(hEntity, "__changing_angles", true);
+
+		if (hEntity.IsPlayer())
+		{
+			for (local i = 0; i < iSteps; ++i)
+			{
+				t += dt;
+				flTime += flInterval;
+
+				// if (bSlerp)
+				// 	vecResult = VectorToQAngle(VectorSlerp(vecAnglesStart.Forward(), vecAngles.Forward(), bSpline ? Math.SimpleSpline(t) : t));
+				// else
+					vecResult = AnglesLerp(vecAnglesStart, vecAngles, bSpline ? Math.SimpleSpline(t) : t);
+
+				local timer = CreateTimer(flTime, ::__SetAnglesBySteps_TimerHandler, hEntity, vecResult);
+
+				--g_iUniqueIDs;
+				timer.m_iIdentifier = nID;
+			}
+		}
+		else
+		{
+			for (local i = 0; i < iSteps; ++i)
+			{
+				t += dt;
+				flTime += flInterval;
+
+				local timer = CreateTimer(flTime, ::__SetAnglesBySteps_TimerHandler, hEntity, OrientationLerp(vecAnglesStart, vecAngles, t, bSlerp, true));
+
+				--g_iUniqueIDs;
+				timer.m_iIdentifier = nID;
+			}
+		}
+
+		local timer = CreateTimer(flTime, function(hEntity){
+			if (hEntity.IsValid())
+			{
+				SetScriptScopeVar(hEntity, "__changing_angles", false);
+
+				foreach (func in ::g_Hooks.OnSetEntityAnglesCompleted)
+				{
+					try
+					{
+						func(hEntity);
+					}
+					catch (exception)
+					{
+						errorl("[Hooks Watchdog] " + exception);
+						errorl("[Hooks Watchdog] An error has occurred in a callback function");
+					}
+				}
+			}
+		}, hEntity);
+
+		--g_iUniqueIDs;
+		timer.m_iIdentifier = nID;
+
+		return nID;
+	}
+
+	return null;
+}
+
+function __SetAnglesBySteps_TimerHandler(hEntity, vecAngles)
+{
+	if (hEntity.IsValid())
+	{
+		if (hEntity.IsPlayer())
+			TP(hEntity, null, vecAngles, null);
+		else
+			hEntity.SetAngles(vecAngles);
+	}
+}
+
+/** Set an entity angles to another entity
+* Signature: void SetAnglesToEntity(handle entity, handle target, Vector vecCorrection, bool bUseBodyPosition, float bodyPositionPercent)
+*/
+
+function SetAnglesToEntity(hEntity, hTarget, vecCorrection = Vector(), bUseBodyPosition = false, flBodyPositionPercent = 0.5)
+{
+	local vecDir = vecCorrection;
+
+	if (hTarget.IsPlayer())
+		vecDir += (bUseBodyPosition ? hTarget.GetBodyPosition(flBodyPositionPercent) : hTarget.EyePosition()) - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
+	else
+		vecDir += hTarget.GetOrigin() - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
+
+	TP(hEntity, null, vecDir, null, true);
+}
+
+/** Get an entity angles to another entity
+* Signature: QAngle GetAnglesToEntity(handle entity, handle target, Vector vecCorrection, bool bUseBodyPosition, float bodyPositionPercent)
+*/
+
+function GetAnglesToEntity(hEntity, hTarget, vecCorrection = Vector(), bUseBodyPosition = false, flBodyPositionPercent = 0.5)
+{
+	local vecDir = vecCorrection;
+
+	if (hTarget.IsPlayer())
+		vecDir += (bUseBodyPosition ? hTarget.GetBodyPosition(flBodyPositionPercent) : hTarget.EyePosition()) - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
+	else
+		vecDir += hTarget.GetOrigin() - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
+
+	return VectorToQAngle(vecDir);
+}
+
+/** Create an invisible wall
+* Signature: handle CreateInvisibleWall(string targetname, Vector origin, Vector maxs, Vector mins, int type, bool bEnable)
+*/
+
+function CreateInvisibleWall(sName, vecPos, vecMaxs = Vector(64, 64, 128), vecMins = Vector(-64, -64, 0), iType = PHYS_BLOCKER_EVERYONE, bEnable = true)
+{
+	local hEntity = SpawnEntityFromTable("env_physics_blocker", {
+		origin = vecPos
+		targetname = sName.tostring()
+		initialstate = bEnable.tointeger()
+		blocktype = iType
+	});
+
+	hEntity.__KeyValueFromVector("maxs", vecMaxs);
+	hEntity.__KeyValueFromVector("mins", vecMins);
+
+	hEntity.ValidateScriptScope();
+
+	return hEntity;
+}
+
 /** Get the host player
 * Signature: handle GetHostPlayer()
 */
@@ -1394,71 +1673,6 @@ function GetHostPlayer()
 	}
 }
 
-/** Collect alive survivors into a table
-* Signature: table CollectAliveSurvivors()
-*/
-
-function CollectAliveSurvivors()
-{
-	local hPlayer;
-	local tSurvivors = {};
-
-	while (hPlayer = Entities.FindByClassname(hPlayer, "player"))
-	{
-		if (hPlayer.IsSurvivor() && hPlayer.IsAlive() && !hPlayer.IsIncapacitated())
-		{
-			tSurvivors[hPlayer.GetEntityIndex()] <- hPlayer;
-		}
-	}
-
-	return tSurvivors;
-}
-
-/** Collect alive players into a table
-* Signature: table CollectAlivePlayers()
-*/
-
-function CollectAlivePlayers()
-{
-	local hPlayer;
-	local tPlayers = {};
-
-	while (hPlayer = Entities.FindByClassname(hPlayer, "player"))
-	{
-		if (hPlayer.IsSurvivor())
-		{
-			if (hPlayer.IsAlive())
-			{
-				tPlayers[hPlayer.GetEntityIndex()] <- hPlayer;
-			}
-		}
-		else
-		{
-			if (NetProps.GetPropInt(hPlayer, "m_iObserverMode") == 0)
-			{
-				tPlayers[hPlayer.GetEntityIndex()] <- hPlayer;
-			}
-		}
-	}
-
-	return tPlayers;
-}
-
-/** Collect all players into a table
-* Signature: table CollectAliveSurvivors()
-*/
-
-function CollectPlayers()
-{
-	local hPlayer;
-	local tPlayers = {};
-
-	while (hPlayer = Entities.FindByClassname(hPlayer, "player"))
-		tPlayers[hPlayer.GetEntityIndex()] <- hPlayer;
-
-	return tPlayers;
-}
-
 /** Send a command to a bot
 * Signature: void SendCommandToBot(int command, handle bot, handle target, Vector position)
 */
@@ -1477,16 +1691,6 @@ function SendCommandToBot(iCommand = BOT_CMD_MOVE, hBot = null, hTarget = null, 
 	CommandABot(tCommands);
 }
 
-/** Send a server command
-* Signature: void ServerCommand(string command, float delay)
-*/
-
-function ServerCommand(sCommand = "", flDelay = 0.0)
-{
-	AcceptEntityInput(g_hServerCommand, "Command", sCommand.tostring(), flDelay.tofloat(), null);
-	AcceptEntityInput(g_hServerCommand, "Kill", "", flDelay.tofloat(), null);
-}
-
 /** Send a client command to all
 * Signature: void ClientCommandToAll(string command, float delay)
 */
@@ -1497,29 +1701,402 @@ function ClientCommandToAll(sCommand = "", flDelay = 0.0)
 	AcceptEntityInput(g_hBroadcastClientCommand, "Kill", "", flDelay.tofloat(), null);
 }
 
-/** Do trace line
-* Signature: handle/Vector DoTraceLine(Vector Start, Vector Direction, int hittype, float distance, int masktype, handle ignoreEntity)
+/** Get position to ground
+* Signature: Vector GetPositionToGround(handle entity)
 */
 
-function DoTraceLine(vecStart = Vector(), vecDir = Vector(), tr_type = eTrace.Type_Hit, tr_dist = eTrace.Distance, tr_mask = eTrace.Mask_Shot, tr_ignore = null)
+function GetPositionToGround(hEntity)
 {
-	local vecEnd = vecStart + vecDir.Scale(tr_dist);
+	local tTraceResult = {};
 
-	local tTrace =
+	DoTraceLine(tTraceResult, hEntity.GetOrigin(), hEntity.GetOrigin() + Vector(0, 0, -TRACE_MAX_DISTANCE), TRACE_MASK_SHOT, hEntity);
+
+	return tTraceResult["pos"];
+}
+
+/** Get distance to ground
+* Signature: float GetDistanceToGround(handle entity)
+*/
+
+function GetDistanceToGround(hEntity)
+{
+	local tTraceResult = {};
+
+	DoTraceLine(tTraceResult, hEntity.GetOrigin(), hEntity.GetOrigin() + Vector(0, 0, -TRACE_MAX_DISTANCE), TRACE_MASK_SHOT, hEntity);
+
+	return fabs(hEntity.GetOrigin().z - tTraceResult["pos"].z);
+}
+
+/** Get entity's script scope
+* Signature: table GetScriptScope(handle entity)
+*/
+
+function GetScriptScope(hEntity)
+{
+	hEntity.ValidateScriptScope();
+	return hEntity.GetScriptScope();
+}
+
+/** Get entity's script scope variable
+* Signature: any GetScriptScopeVar(handle entity, string key)
+*/
+
+function GetScriptScopeVar(hEntity, key)
+{
+	hEntity.ValidateScriptScope();
+
+	if (KeyInScriptScope(hEntity, key))
+		return hEntity.GetScriptScope()[key];
+}
+
+/** Set entity's script scope variable
+* Signature: void SetScriptScopeVar(handle entity, string key, any variable)
+*/
+
+function SetScriptScopeVar(hEntity, key, var)
+{
+	hEntity.ValidateScriptScope();
+	hEntity.GetScriptScope()[key] <- var;
+}
+
+/** If a key in entity's script scope
+* Signature: bool KeyInScriptScope(handle entity, string key)
+*/
+
+function KeyInScriptScope(hEntity, key)
+{
+	hEntity.ValidateScriptScope();
+
+	if (key in hEntity.GetScriptScope())
+		return true;
+
+	return false;
+}
+
+/** Remove entity's script scope key
+* Signature: void RemoveScriptScopeKey(handle entity, string key)
+*/
+
+function RemoveScriptScopeKey(hEntity, key)
+{
+	hEntity.ValidateScriptScope();
+
+	if (KeyInScriptScope(hEntity, key))
+		delete hEntity.GetScriptScope()[key];
+}
+
+/*===============================*\
+ *    Extends Classes Methods    *
+\*===============================*/
+
+function ExtendClassMethods()
+{
+	if (!("CTerrorPlayer" in getroottable()))
+		return;
+
+	/** Send a client command
+	* Signature: void CTerrorPlayer.ClientCommand(string command, float delay)
+	*/
+
+	function CTerrorPlayer::ClientCommand(sCommand = "", flDelay = 0.0)
 	{
-		start = vecStart
-		end = vecEnd
-		ignore = tr_ignore
-		mask = tr_mask
+		AcceptEntityInput(g_hClientCommand, "Command", sCommand.tostring(), flDelay.tofloat(), this);
+		AcceptEntityInput(g_hClientCommand, "Kill", "", flDelay.tofloat(), null);
 	}
 
-	TraceLine(tTrace);
+	/** Press a button
+	* Signature: void CTerrorPlayer.SendInput(int button, float releasedelay)
+	*/
 
-	if (tr_type == eTrace.Type_Hit && tTrace.hit && tTrace.enthit.GetEntityIndex() != 0)
-		return tTrace.enthit;
+	function CTerrorPlayer::SendInput(iButton, flReleaseDelay = 0.01)
+	{
+		if (KeyInScriptScope(this, format("is_bitmask_%d_forced", iButton)))
+			if (GetScriptScopeVar(this, format("is_bitmask_%d_forced", iButton)))
+				return;
 
-	if (tr_type == eTrace.Type_Pos)
-		return tTrace.pos;
+		NetProps.SetPropInt(this, "m_afButtonForced", NetProps.GetPropInt(this, "m_afButtonForced") | iButton);
+		SetScriptScopeVar(this, format("is_bitmask_%d_forced", iButton), true);
+
+		CreateTimer(flReleaseDelay, function(hPlayer, iButton){
+			if (hPlayer.IsValid())
+			{
+				NetProps.SetPropInt(hPlayer, "m_afButtonForced", NetProps.GetPropInt(hPlayer, "m_afButtonForced") & ~iButton)
+				SetScriptScopeVar(hPlayer, format("is_bitmask_%d_forced", iButton), false);
+			}
+		}, this, iButton);
+	}
+
+	/** Is player a host
+	* Signature: bool CTerrorPlayer.IsHost()
+	*/
+
+	function CTerrorPlayer::IsHost()
+	{
+		local hGameRules, hPlayerManager;
+
+		if ((hGameRules = Entities.FindByClassname(null, "terror_gamerules")) && (hPlayerManager = Entities.FindByClassname(null, "terror_player_manager")))
+			return NetProps.GetPropIntArray(hPlayerManager, "m_listenServerHost", this.GetEntityIndex()) && !NetProps.GetPropInt(hGameRules, "m_bIsDedicatedServer");
+
+		return false;
+	}
+
+	/** Is a player stuck
+	* Signature: bool CTerrorPlayer.IsStuck()
+	*/
+
+	function CTerrorPlayer::IsStuck()
+	{
+		return NetProps.GetPropInt(this, "m_StuckLast") > 0;
+	}
+
+	/** Is a player alive
+	* Signature: bool CTerrorPlayer.IsAlive()
+	*/
+
+	function CTerrorPlayer::IsAlive()
+	{
+		return NetProps.GetPropInt(this, "m_lifeState") == 0;
+	}
+
+	/** Kill a player
+	* Signature: void CTerrorPlayer.KillPlayer(handle attacker, int damageType)
+	*/
+
+	function CTerrorPlayer::KillPlayer(hAttacker = null, iDamageType = DMG_GENERIC)
+	{
+		if (this.IsSurvivor())
+			this.SetReviveCount(2);
+
+		this.SetHealth(1);
+		this.TakeDamage(10.0, DMG_GENERIC, !hAttacker ? this : hAttacker);
+	}
+
+	/** Hide the player's HUD
+	* Signature: void CTerrorPlayer.HideHUD(int bitmask)
+	*/
+
+	function CTerrorPlayer::HideHUD(bitmask)
+	{
+		NetProps.SetPropInt(this, "m_Local.m_iHideHUD", bitmask);
+	}
+
+	/** Returns a vector between player's eye position and foot position
+	* Signature: Vector CTerrorPlayer.GetBodyPosition(float distanceFactor)
+	*/
+
+	function CTerrorPlayer::GetBodyPosition(flPercent = 0.5)
+	{
+		return VectorLerp(this.GetOrigin(), this.EyePosition(), flPercent);
+	}
+
+	/** Is a player attacked by a special infected
+	* Signature: bool CTerrorPlayer.IsAttackedBySI()
+	*/
+
+	function CTerrorPlayer::IsAttackedBySI()
+	{
+		if (this.IsSurvivor())
+		{
+			return NetProps.GetPropEntity(this, "m_pounceAttacker") ||
+				   NetProps.GetPropEntity(this, "m_jockeyAttacker") ||
+				   NetProps.GetPropEntity(this, "m_pummelAttacker") ||
+				   NetProps.GetPropEntity(this, "m_carryAttacker") ||
+				   NetProps.GetPropEntity(this, "m_tongueOwner");
+		}
+
+		printl("[IsAttackedBySI] Player is not a survivor");
+	}
+
+	/** Get a SI attacked a player
+	* Signature: handle CTerrorPlayer.GetSIAttacker()
+	*/
+
+	function CTerrorPlayer::GetSIAttacker()
+	{
+		if (this.IsSurvivor())
+		{
+			if (NetProps.GetPropEntity(this, "m_pounceAttacker")) return NetProps.GetPropEntity(this, "m_pounceAttacker");
+			else if (NetProps.GetPropEntity(this, "m_jockeyAttacker")) return NetProps.GetPropEntity(this, "m_jockeyAttacker");
+			else if (NetProps.GetPropEntity(this, "m_pummelAttacker")) return NetProps.GetPropEntity(this, "m_pummelAttacker");
+			else if (NetProps.GetPropEntity(this, "m_carryAttacker")) return NetProps.GetPropEntity(this, "m_carryAttacker");
+			else if (NetProps.GetPropEntity(this, "m_tongueOwner")) return NetProps.GetPropEntity(this, "m_tongueOwner");
+		}
+		else
+		{
+			printl("[IsAttackedBySI] Player is not a survivor");
+		}
+	}
+
+	/** Get a SI's victim
+	* Signature: handle CTerrorPlayer.GetSIVictim()
+	*/
+
+	function CTerrorPlayer::GetSIVictim()
+	{
+		if (!this.IsSurvivor())
+		{
+			if (NetProps.GetPropEntity(this, "m_pounceVictim")) return NetProps.GetPropEntity(this, "m_pounceVictim");
+			else if (NetProps.GetPropEntity(this, "m_jockeyVictim")) return NetProps.GetPropEntity(this, "m_jockeyVictim");
+			else if (NetProps.GetPropEntity(this, "m_pummelVictim")) return NetProps.GetPropEntity(this, "m_pummelVictim");
+			else if (NetProps.GetPropEntity(this, "m_carryVictim")) return NetProps.GetPropEntity(this, "m_carryVictim");
+			else if (NetProps.GetPropEntity(this, "m_tongueVictim")) return NetProps.GetPropEntity(this, "m_tongueVictim");
+		}
+		else
+		{
+			printl("[IsAttackedBySI] Player is not an infected");
+		}
+	}
+
+	/** Is a player a special infected
+	* Signature: bool CTerrorPlayer.IsSpecialInfected()
+	*/
+
+	function CTerrorPlayer::IsSpecialInfected()
+	{
+		if (NetProps.GetPropInt(this, "m_iTeamNum") == 3)
+		{
+			switch (this.GetZombieType())
+			{
+			case ZOMBIE_SMOKER:
+			case ZOMBIE_BOOMER:
+			case ZOMBIE_HUNTER:
+			case ZOMBIE_SPITTER:
+			case ZOMBIE_JOCKEY:
+			case ZOMBIE_CHARGER:
+				return true;
+
+			default:
+				return false;
+			}
+		}
+		else
+		{
+			printl("[IsSpecialInfected] Player is not an infected");
+			return false;
+		}
+	}
+
+	/** Set a player's ammo
+	* Signature: void CTerrorPlayer.SetAmmo(int slot, int clips, int ammo, int upgradeammo)
+	*/
+
+	function CTerrorPlayer::SetAmmo(iSlot, iClip, iAmmo = null, iUpgradeAmmo = null)
+	{
+		local tInv = {};
+		GetInvTable(this, tInv);
+
+		if (iSlot == INVENTORY_WEAPON_PRIMARY)
+		{
+			if ("slot0" in tInv)
+			{
+				local hWeapon = tInv["slot0"];
+
+				if (iClip != null)
+					NetProps.SetPropInt(hWeapon, "m_iClip1", iClip);
+
+				if (iAmmo != null)
+				{
+					NetProps.SetPropIntArray(this, "m_iAmmo", iAmmo, NetProps.GetPropInt(hWeapon, "m_iPrimaryAmmoType"));
+
+					if (iUpgradeAmmo != null)
+					{
+						local iUpgradeType = NetProps.GetPropInt(hWeapon, "m_upgradeBitVec");
+
+						if (iUpgradeType & UPGRADE_INCENDIARY || iUpgradeType & UPGRADE_EXPLOSIVE)
+							NetProps.SetPropInt(hWeapon, "m_nUpgradedPrimaryAmmoLoaded", iUpgradeAmmo);
+						else
+							printl("[SetAmmo] No upgrade ammo found");
+					}
+				}
+			}
+			else
+			{
+				printl("[SetAmmo] Invalid weapon");
+			}
+		}
+		else if (iSlot == INVENTORY_WEAPON_SECONDARY)
+		{
+			if ("slot1" in tInv || tInv["slot1"].GetClassname() != "weapon_melee")
+				NetProps.SetPropInt(tInv["slot1"], "m_iClip1", iClip);
+			else
+				printl("[SetAmmo] Invalid weapon");
+		}
+		else
+		{
+			printl("[SetAmmo] Wrong inventory slot");
+		}
+	}
+
+	/** Wrapper for TraceLine function
+	* Signature: void CTerrorPlayer.DoTraceLine(table result, float traceDistance, int masktype, bool getPlaneNormal)
+	*/
+
+	function CTerrorPlayer::DoTraceLine(tTraceResult, flTraceDistance = TRACE_MAX_DISTANCE, iMask = TRACE_MASK_SHOT, bPlaneNormal = false)
+	{
+		Assert( typeof tTraceResult == "table", "tTraceResult must be passed as empty table", true );
+
+		local traceDirection = this.EyeAngles();
+		local vecDir = traceDirection.Forward();
+
+		local vecStart = this.EyePosition();
+		local vecEnd = vecStart + vecDir.Scale(flTraceDistance);
+
+		local tTrace =
+		{
+			start = vecStart
+			end = vecEnd
+			ignore = this
+			mask = iMask
+		}
+
+		TraceLine(tTrace);
+
+		if (bPlaneNormal)
+		{
+			if (traceDirection == null)
+				traceDirection = (vecEnd - vecStart).VectorToQAngle();
+			
+			local vecPointA, vecPointB;
+
+			local vecStartShifted = vecStart + traceDirection.Left().Scale(-0.01);
+
+			local tPlaneTrace =
+			{
+				start = vecStartShifted
+				end = vecStartShifted + vecDir.Scale(TRACE_MAX_DISTANCE)
+				ignore = this
+				mask = iMask
+			}
+
+			TraceLine(tPlaneTrace); vecPointA = tPlaneTrace.pos;
+
+			tPlaneTrace.start = vecStart + traceDirection.Up().Scale(-0.01);
+			tPlaneTrace.end = tPlaneTrace.start + vecDir.Scale(TRACE_MAX_DISTANCE);
+
+			TraceLine(tPlaneTrace); vecPointB = tPlaneTrace.pos;
+			
+			tTraceResult.planenormal <- ((vecPointA - tTrace.pos).Cross(vecPointB - tTrace.pos)).Normalize();
+		}
+		else
+		{
+			tTraceResult.planenormal <- Vector();
+		}
+
+		if (tTrace.hit && tTrace.enthit.GetEntityIndex() != 0)
+			tTraceResult.enthit <- tTrace.enthit;
+		else
+			tTraceResult.enthit <- null;
+		
+		if ("startsolid" in tTrace)
+			tTraceResult.startsolid <- tTrace.startsolid;
+		else
+			tTraceResult.startsolid <- false;
+		
+		tTraceResult.fraction <- tTrace.fraction;
+		tTraceResult.hit <- tTrace.hit;
+		tTraceResult.pos <- tTrace.pos;
+	}
+
 }
 
 /*===============================*\
@@ -1537,7 +2114,7 @@ function CreateConVar(sName, sDefaultValue, sType = null, flMinValue = null, flM
 		if (cvar.GetName() == sName)
 		{
 			printf("[CreateConVar] ConVar '%s' already created", sName);
-			return;
+			return cvar;
 		}
 	}
 
@@ -1723,505 +2300,6 @@ function GetConVarFloat(convar)
 }
 
 /*===============================*\
-*    Entity Related Functions    *
-\*===============================*/
-
-/** Attach an entity
-* Signature: void AttachEntity(handle entity, handle target, string attachment, float delay)
-*/
-
-function AttachEntity(hEntity, hEntityToAttach, sAttachment = null, flDelay = 0.0)
-{
-	AcceptEntityInput(hEntityToAttach, "SetParent", "!activator", flDelay, hEntity);
-	if (sAttachment != null) AcceptEntityInput(hEntityToAttach, "SetParentAttachment", sAttachment, flDelay, hEntity);
-}
-
-/** Remove an attachment
-* Signature: void RemoveAttachment(handle entity, handle target, float delay)
-*/
-
-function RemoveAttachment(hEntity, hEntityToUnattach, flDelay = 0.0)
-{
-	AcceptEntityInput(hEntityToUnattach, "ClearParent", "", flDelay, hEntity);
-}
-
-/** Get distance between two entities
-* Signature: float GetDistance(handle entity, handle target, bool bSquared, bool bMethod2D)
-*/
-
-function GetDistanceToEntity(hEntity, hTarget, bSquared = false, bMethod2D = false)
-{
-	local flDistance;
-
-	if (bSquared)
-		flDistance = bMethod2D ? (hEntity.GetOrigin() - hTarget.GetOrigin()).Length2DSqr() : (hEntity.GetOrigin() - hTarget.GetOrigin()).LengthSqr();
-	else
-		flDistance = bMethod2D ? (hEntity.GetOrigin() - hTarget.GetOrigin()).Length2D() : (hEntity.GetOrigin() - hTarget.GetOrigin()).Length();
-
-	return flDistance;
-}
-
-/** Ignite an entity
-* Signature: void Ignite(handle entity, handle attacker, float interval)
-*/
-
-function Ignite(hEntity, hAttacker = null, flInterval = 5.0)
-{
-	if (hEntity.IsPlayer() || hEntity.GetClassname() == "witch")
-		hEntity.TakeDamage(0.01, DMG_BURN, !hAttacker ? hEntity : hAttacker);
-	else
-		AcceptEntityInput(hEntity, "IgniteLifeTime", flInterval.tostring());
-	
-	if (hEntity.IsPlayer() && !hEntity.IsSurvivor())
-	{
-		SetScriptScopeVar(hEntity, "extinguish_time", Time() + flInterval);
-		CreateTimer(flInterval, function(hPlayer){
-			if (hPlayer.IsValid() && hPlayer.IsOnFire() & GetScriptScopeVar(hPlayer, "extinguish_time") <= Time())
-				hPlayer.Extinguish();
-		}, hEntity);
-	}
-}
-
-/** Set entity angles by steps. FIXME: rework
-* Signature: void SetAnglesBySteps(handle entity, QAngle angles, int steps, float deltaTime, bool sphericalLerp)
-*/
-
-function SetAnglesBySteps(hEntity, eAngles, iSteps, flDeltaTime = 0.01, bSlerp = true)
-{
-	local eAnglesStart = hEntity.IsPlayer() ? hEntity.EyeAngles() : hEntity.GetAngles();
-	if ((Vector(eAngles.x, eAngles.y, eAngles.z) - Vector(eAnglesStart.x, eAnglesStart.y, eAnglesStart.z)).LengthSqr() >= 1)
-	{
-		local flTime = 0.0;
-		if (hEntity.IsPlayer()) // linear interpolation only
-		{
-			if (eAngles.z != 0) eAngles.z = 0;
-			if (eAngles.y < -180 || eAngles.y > 180) eAngles.y = Math.NormalizeAngle(eAngles.y);
-			if (eAnglesStart.y < -180 || eAnglesStart.y > 180) eAnglesStart.y = Math.NormalizeAngle(eAnglesStart.y);
-			if (eAngles.y < 0) eAngles.y += 360;
-			if (eAnglesStart.y < 0) eAnglesStart.y += 360;
-
-			local eAnglesDifference = eAngles - eAnglesStart;
-
-			if (eAngles.y + fabs(360 - eAnglesStart.y) < fabs(eAngles.y - eAnglesStart.y)) eAnglesDifference.y = eAngles.y + fabs(360 - eAnglesStart.y);
-			else if (eAnglesStart.y + fabs(360 - eAngles.y) < fabs(eAnglesStart.y - eAngles.y)) eAnglesDifference.y = -(eAnglesStart.y + fabs(360 - eAngles.y));
-
-			local eAnglesDelta = QAngle(eAnglesDifference.x / iSteps, eAnglesDifference.y / iSteps, 0);
-			for (local i = 0; i < iSteps; ++i)
-			{
-				flTime += flDeltaTime;
-				eAnglesStart += eAnglesDelta;
-
-				CreateTimer(flTime, function(hEntity, idx, eAngles){
-					if (hEntity.IsValid() && g_bAllowChangeCameraAngles[idx])
-					{
-						if (eAngles.y < -180 || eAngles.y > 180) eAngles.y = Math.NormalizeAngle(eAngles.y);
-						TP(hEntity, null, eAngles, null);
-					}
-				}, hEntity, hEntity.GetEntityIndex(), eAnglesStart);
-
-				if (i == iSteps - 1)
-				{
-					CreateTimer(flTime, function(hEntity){
-						if ("SetCameraAnglesCompleted" in getroottable()) SetCameraAnglesCompleted(hEntity);
-					}, hEntity);
-				}
-			}
-		}
-		else // spherical (with a choice) linear interpolation
-		{
-			local frametime = 1.0 / iSteps;
-			for (local t = frametime; t < 1.0; t += frametime)
-			{
-				flTime += flDeltaTime;
-
-				CreateTimer(flTime, function(hEntity, idx, eAngles){
-					if (hEntity.IsValid() && g_bAllowChangeCameraAngles[idx])
-					{
-						hEntity.SetAngles(eAngles);
-					}
-				}, hEntity, hEntity.GetEntityIndex(), OrientationLerp(eAnglesStart, eAngles, t, bSlerp, true));
-
-				if (t + frametime >= 1.0)
-				{
-					CreateTimer(flTime, function(hEntity){
-						if ("SetCameraAnglesCompleted" in getroottable()) SetCameraAnglesCompleted(hEntity);
-					}, hEntity);
-				}
-			}
-		}
-	}
-}
-
-/** Set an entity angles to another entity
-* Signature: void SetAnglesToEntity(handle entity, handle target, Vector vecCorrection, bool bUseBodyPosition, float bodyPositionPercent)
-*/
-
-function SetAnglesToEntity(hEntity, hTarget, vecCorrection = Vector(), bUseBodyPosition = false, flBodyPositionPercent = 0.5)
-{
-	local vecDir = vecCorrection;
-
-	if (hTarget.IsPlayer())
-		vecDir += (bUseBodyPosition ? hTarget.GetBodyPosition(flBodyPositionPercent) : hTarget.EyePosition()) - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
-	else
-		vecDir += hTarget.GetOrigin() - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
-
-	TP(hEntity, null, vecDir, null, true);
-}
-
-/** Get an entity angles to another entity
-* Signature: QAngle GetAnglesToEntity(handle entity, handle target, Vector vecCorrection, bool bUseBodyPosition, float bodyPositionPercent)
-*/
-
-function GetAnglesToEntity(hEntity, hTarget, vecCorrection = Vector(), bUseBodyPosition = false, flBodyPositionPercent = 0.5)
-{
-	local vecDir = vecCorrection;
-
-	if (hTarget.IsPlayer())
-		vecDir += (bUseBodyPosition ? hTarget.GetBodyPosition(flBodyPositionPercent) : hTarget.EyePosition()) - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
-	else
-		vecDir += hTarget.GetOrigin() - (hEntity.IsPlayer() ? hEntity.EyePosition() : hEntity.GetOrigin());
-
-	return VectorToQAngle(vecDir);
-}
-
-/** Get position to ground
-* Signature: Vector GetPositionToGround(handle entity)
-*/
-
-function GetPositionToGround(hEntity)
-{
-	return DoTraceLine(hEntity.GetOrigin(), Vector(0, 0, -1), eTrace.Type_Pos, eTrace.Distance, eTrace.Mask_Shot, hEntity);
-}
-
-/** Get distance to ground
-* Signature: float GetDistanceToGround(handle entity)
-*/
-
-function GetDistanceToGround(hEntity)
-{
-	return (hEntity.GetOrigin() - DoTraceLine(hEntity.GetOrigin(), Vector(0, 0, -1), eTrace.Type_Pos, eTrace.Distance, eTrace.Mask_Shot, hEntity)).Length();
-}
-
-/** Get entity's script scope
-* Signature: table GetScriptScope(handle entity)
-*/
-
-function GetScriptScope(hEntity)
-{
-	hEntity.ValidateScriptScope();
-	return hEntity.GetScriptScope();
-}
-
-/** Get entity's script scope variable
-* Signature: any GetScriptScopeVar(handle entity, string key)
-*/
-
-function GetScriptScopeVar(hEntity, key)
-{
-	hEntity.ValidateScriptScope();
-
-	if (KeyInScriptScope(hEntity, key))
-		return hEntity.GetScriptScope()[key];
-}
-
-/** Set entity's script scope variable
-* Signature: void SetScriptScopeVar(handle entity, string key, any variable)
-*/
-
-function SetScriptScopeVar(hEntity, key, var)
-{
-	hEntity.ValidateScriptScope();
-	hEntity.GetScriptScope()[key] <- var;
-}
-
-/** If a key in entity's script scope
-* Signature: bool KeyInScriptScope(handle entity, string key)
-*/
-
-function KeyInScriptScope(hEntity, key)
-{
-	hEntity.ValidateScriptScope();
-
-	if (key in hEntity.GetScriptScope())
-		return true;
-
-	return false;
-}
-
-/** Remove entity's script scope key
-* Signature: void RemoveScriptScopeKey(handle entity, string key)
-*/
-
-function RemoveScriptScopeKey(hEntity, key)
-{
-	hEntity.ValidateScriptScope();
-
-	if (KeyInScriptScope(hEntity, key))
-		delete hEntity.GetScriptScope()[key];
-}
-
-/*===============================*\
- *    Extends Classes Methods    *
-\*===============================*/
-
-function ExtendClassMethods()
-{
-	if (!("CTerrorPlayer" in getroottable()))
-		return;
-
-	/** Send a client command
-	* Signature: void CTerrorPlayer.ClientCommand(string command, float delay)
-	*/
-
-	function CTerrorPlayer::ClientCommand(sCommand = "", flDelay = 0.0)
-	{
-		AcceptEntityInput(g_hClientCommand, "Command", sCommand.tostring(), flDelay.tofloat(), this);
-		AcceptEntityInput(g_hClientCommand, "Kill", "", flDelay.tofloat(), null);
-	}
-
-	/** Press a button
-	* Signature: void CTerrorPlayer.SendInput(int button, float releasedelay)
-	*/
-
-	function CTerrorPlayer::SendInput(iButton, flReleaseDelay = 0.01)
-	{
-		if (KeyInScriptScope(this, format("is_bitmask_%d_forced", iButton)))
-			if (GetScriptScopeVar(this, format("is_bitmask_%d_forced", iButton)))
-				return;
-
-		NetProps.SetPropInt(this, "m_afButtonForced", NetProps.GetPropInt(this, "m_afButtonForced") | iButton);
-		SetScriptScopeVar(this, format("is_bitmask_%d_forced", iButton), true);
-
-		CreateTimer(flReleaseDelay, function(hPlayer, iButton){
-			if (hPlayer.IsValid())
-			{
-				NetProps.SetPropInt(hPlayer, "m_afButtonForced", NetProps.GetPropInt(hPlayer, "m_afButtonForced") & ~iButton)
-				SetScriptScopeVar(hPlayer, format("is_bitmask_%d_forced", iButton), false);
-			}
-		}, this, iButton);
-	}
-
-	/** Is player a host
-	* Signature: bool CTerrorPlayer.IsHost()
-	*/
-
-	function CTerrorPlayer::IsHost()
-	{
-		local hGameRules, hPlayerManager;
-
-		if ((hGameRules = Entities.FindByClassname(null, "terror_gamerules")) && (hPlayerManager = Entities.FindByClassname(null, "terror_player_manager")))
-			return NetProps.GetPropIntArray(hPlayerManager, "m_listenServerHost", this.GetEntityIndex()) && !NetProps.GetPropInt(hGameRules, "m_bIsDedicatedServer");
-
-		return false;
-	}
-
-	/** Is a player stuck
-	* Signature: bool CTerrorPlayer.IsStuck()
-	*/
-
-	function CTerrorPlayer::IsStuck()
-	{
-		return NetProps.GetPropInt(this, "m_StuckLast") > 0;
-	}
-
-	/** Is a player alive
-	* Signature: bool CTerrorPlayer.IsAlive()
-	*/
-
-	function CTerrorPlayer::IsAlive()
-	{
-		return !(this.IsDead() || this.IsDying());
-	}
-
-	/** Kill a player
-	* Signature: void CTerrorPlayer.KillPlayer(handle attacker, int damageType)
-	*/
-
-	function CTerrorPlayer::KillPlayer(hAttacker = null, iDamageType = DMG_GENERIC)
-	{
-		if (this.IsSurvivor())
-			this.SetReviveCount(2);
-
-		this.SetHealth(1);
-		this.TakeDamage(10.0, DMG_GENERIC, !hAttacker ? this : hAttacker);
-	}
-
-	/** Hide the player's HUD
-	* Signature: void CTerrorPlayer.HideHUD(int bitmask)
-	*/
-
-	function CTerrorPlayer::HideHUD(bitmask)
-	{
-		NetProps.SetPropInt(this, "m_Local.m_iHideHUD", bitmask);
-	}
-
-	/** Returns a vector between player's eye position and foot position
-	* Signature: Vector CTerrorPlayer.GetBodyPosition(float distanceFactor)
-	*/
-
-	function CTerrorPlayer::GetBodyPosition(flPercent = 0.5)
-	{
-		return VectorLerp(this.GetOrigin(), this.EyePosition(), flPercent);
-	}
-
-	/** Is a player attacked by a special infected
-	* Signature: bool CTerrorPlayer.IsAttackedBySI()
-	*/
-
-	function CTerrorPlayer::IsAttackedBySI()
-	{
-		if (this.IsSurvivor())
-		{
-			return NetProps.GetPropEntity(this, "m_pounceAttacker") ||
-				   NetProps.GetPropEntity(this, "m_jockeyAttacker") ||
-				   NetProps.GetPropEntity(this, "m_pummelAttacker") ||
-				   NetProps.GetPropEntity(this, "m_carryAttacker") ||
-				   NetProps.GetPropEntity(this, "m_tongueOwner");
-		}
-
-		printl("[IsAttackedBySI] Player is not a survivor");
-	}
-
-	/** Get a SI attacked a player
-	* Signature: handle CTerrorPlayer.GetSIAttacker()
-	*/
-
-	function CTerrorPlayer::GetSIAttacker()
-	{
-		if (this.IsSurvivor())
-		{
-			if (NetProps.GetPropEntity(this, "m_pounceAttacker")) return NetProps.GetPropEntity(this, "m_pounceAttacker");
-			else if (NetProps.GetPropEntity(this, "m_jockeyAttacker")) return NetProps.GetPropEntity(this, "m_jockeyAttacker");
-			else if (NetProps.GetPropEntity(this, "m_pummelAttacker")) return NetProps.GetPropEntity(this, "m_pummelAttacker");
-			else if (NetProps.GetPropEntity(this, "m_carryAttacker")) return NetProps.GetPropEntity(this, "m_carryAttacker");
-			else if (NetProps.GetPropEntity(this, "m_tongueOwner")) return NetProps.GetPropEntity(this, "m_tongueOwner");
-			return;
-		}
-
-		printl("[IsAttackedBySI] Player is not a survivor");
-	}
-
-	/** Get a SI's victim
-	* Signature: handle CTerrorPlayer.GetSIVictim()
-	*/
-
-	function CTerrorPlayer::GetSIVictim()
-	{
-		if (!this.IsSurvivor())
-		{
-			if (NetProps.GetPropEntity(this, "m_pounceVictim")) return NetProps.GetPropEntity(this, "m_pounceVictim");
-			else if (NetProps.GetPropEntity(this, "m_jockeyVictim")) return NetProps.GetPropEntity(this, "m_jockeyVictim");
-			else if (NetProps.GetPropEntity(this, "m_pummelVictim")) return NetProps.GetPropEntity(this, "m_pummelVictim");
-			else if (NetProps.GetPropEntity(this, "m_carryVictim")) return NetProps.GetPropEntity(this, "m_carryVictim");
-			else if (NetProps.GetPropEntity(this, "m_tongueVictim")) return NetProps.GetPropEntity(this, "m_tongueVictim");
-			return;
-		}
-
-		printl("[IsAttackedBySI] Player is not an infected");
-	}
-
-	/** Is a player a special infected
-	* Signature: bool CTerrorPlayer.IsSpecialInfected()
-	*/
-
-	function CTerrorPlayer::IsSpecialInfected()
-	{
-		if (NetProps.GetPropInt(this, "m_iTeamNum") == 3)
-		{
-			switch (this.GetZombieType())
-			{
-			case ZOMBIE_SMOKER:
-			case ZOMBIE_BOOMER:
-			case ZOMBIE_HUNTER:
-			case ZOMBIE_SPITTER:
-			case ZOMBIE_JOCKEY:
-			case ZOMBIE_CHARGER:
-				return true;
-			}
-			return false;
-		}
-
-		printl("[IsSpecialInfected] Player is not an infected");
-	}
-
-	/** Set a player's ammo
-	* Signature: void CTerrorPlayer.SetAmmo(int slot, int clips, int ammo, int upgradeammo)
-	*/
-
-	function CTerrorPlayer::SetAmmo(iSlot, iClip = null, iAmmo = null, iUpgradeAmmo = null)
-	{
-		local tInv = {};
-		GetInvTable(this, tInv);
-
-		if (iSlot == eInventoryWeapon.Primary)
-		{
-			if ("slot0" in tInv)
-			{
-				local hWeapon = tInv["slot0"];
-
-				if (iClip != null)
-					NetProps.SetPropInt(hWeapon, "m_iClip1", iClip);
-
-				if (iAmmo != null)
-				{
-					NetProps.SetPropIntArray(this, "m_iAmmo", iAmmo, NetProps.GetPropInt(hWeapon, "m_iPrimaryAmmoType"));
-					if (iUpgradeAmmo != null)
-					{
-						local iUpgradeType = NetProps.GetPropInt(hWeapon, "m_upgradeBitVec");
-
-						if (iUpgradeType & eUpgrade.Incendiary || iUpgradeType & eUpgrade.Explosive)
-							NetProps.SetPropInt(hWeapon, "m_nUpgradedPrimaryAmmoLoaded", iUpgradeAmmo);
-						else
-							printl("[SetAmmo] No upgrade ammo found");
-					}
-				}
-			}
-			else
-			{
-				printl("[SetAmmo] Invalid weapon");
-			}
-		}
-		else if (iSlot == eInventoryWeapon.Secondary && iClip != null)
-		{
-			if ("slot1" in tInv || tInv["slot1"].GetClassname() != "weapon_melee")
-				NetProps.SetPropInt(tInv["slot1"], "m_iClip1", iClip);
-			else
-				printl("[SetAmmo] Invalid weapon");
-		}
-		else
-		{
-			printl("[SetAmmo] Wrong inventory slot");
-		}
-	}
-
-	/** Do trace Line
-	* Signature: handle/Vector CTerrorPlayer.DoTraceLine(int hittype, float distance, int masktype)
-	*/
-
-	function CTerrorPlayer::DoTraceLine(tr_type = eTrace.Type_Hit, tr_dist = eTrace.Distance, tr_mask = eTrace.Mask_Shot)
-	{
-		local vecStart = this.EyePosition();
-		local vecEnd = vecStart + this.EyeAngles().Forward().Scale(tr_dist);
-
-		local tTrace =
-		{
-			start = vecStart
-			end = vecEnd
-			ignore = this
-			mask = tr_mask
-		}
-
-		TraceLine(tTrace);
-
-		if (tr_type == eTrace.Type_Hit && tTrace.hit && tTrace.enthit.GetEntityIndex() != 0)
-			return tTrace.enthit;
-
-		if (tr_type == eTrace.Type_Pos)
-			return tTrace.pos;
-	}
-}
-
-/*===============================*\
  *        Hook Functions         *
 \*===============================*/
 
@@ -2243,6 +2321,7 @@ function HookEvent(sEvent = null, func = null, tScope = null)
 	{
 		g_CallBackEvents[sEvent] <- {};
 		g_CallBackEvents[sEvent]["CallBack_Functions"] <- [];
+
 		g_CallBackEvents[sEvent]["OnGameEvent_" + sEvent] <- function(tParams)
 		{
 			foreach (__func in g_CallBackEvents[sEvent]["CallBack_Functions"])
@@ -2252,6 +2331,7 @@ function HookEvent(sEvent = null, func = null, tScope = null)
 				if ("entityid" in tParams) tParams["_entity"] <- EntIndexToHScript(tParams.entityid);
 				if ("subject" in tParams) tParams["_subject"] <- GetPlayerFromUserID(tParams.subject);
 				if ("attacker" in tParams) tParams["_attacker"] <- GetPlayerFromUserID(tParams.attacker);
+
 				__func(tParams);
 			}
 		}
@@ -2316,6 +2396,7 @@ function UnhookEvent(sEvent = null, func = null, tScope = null)
 			if (typeof func == "function" || typeof func == "native function")
 			{
 				local sFunction;
+
 				foreach (key, val in (tScope != null ? tScope : getroottable()))
 				{
 					if (val == func)
@@ -2344,6 +2425,7 @@ function UnhookEvent(sEvent = null, func = null, tScope = null)
 				printf("[UnhookEvent] Hook function '%s' is not registered", sFunction);
 				return;
 			}
+
 			printl("[UnhookEvent] Wrong type of variable");
 			return;
 		}
@@ -2394,14 +2476,14 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
-			local aVars = clone func.GetInputArguments();
+			local aVars = clone func.GetArguments();
 			aVars.remove(0);
 			printf("[RegisterLoopFunction] Function '%s' already registered", sFunction);
 			return;
 		}
 	}
 
-	local sName = LF_PREFIX + sFunction.tolower();
+	local sName = LOOPFUNC_PREFIX + sFunction.tolower();
 	local hTimer = Entities.FindByName(null, sName);
 
 	if (!hTimer)
@@ -2412,7 +2494,7 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 		SetScriptScopeVar(hTimer, "__loop_params", {
 			__func = sFunction
 			__with_args = vargv.len() > 0
-			__args = __loop_func.GetInputArguments()
+			__args = __loop_func.GetArguments()
 		});
 
 		SetScriptScopeVar(hTimer, "Think", function(){
@@ -2435,7 +2517,7 @@ function RegisterLoopFunction(sFunction, flRefireTime, ...)
 		{
 			CreateTimer(0.01, function(sFunction, aInputArgs){
 				compilestring("return " + sFunction)().acall(aInputArgs);
-			}, sFunction, __loop_func.GetInputArguments());
+			}, sFunction, __loop_func.GetArguments());
 		}
 		else
 		{
@@ -2501,7 +2583,7 @@ function RemoveLoopFunction(sFunction, ...)
 		{
 			if (vargv.len() > 0)
 			{
-				local aVars = clone func.GetInputArguments();
+				local aVars = clone func.GetArguments();
 				aVars.remove(0);
 
 				if (IsArraysEqual(aVars, vargv))
@@ -2534,6 +2616,7 @@ function RemoveLoopFunction(sFunction, ...)
 			}
 		}
 	}
+	
 	if (vargv.len() > 0)
 	{
 		local sVars = "";
@@ -2574,7 +2657,7 @@ function IsLoopFunctionRegistered(sFunction, ...)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
-			local aVars = clone func.GetInputArguments();
+			local aVars = clone func.GetArguments();
 			aVars.remove(0);
 
 			if (IsArraysEqual(aVars, vargv))
@@ -2609,7 +2692,7 @@ function RegisterOnTickFunction(sFunction, ...)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
-			local aVars = clone func.GetInputArguments();
+			local aVars = clone func.GetArguments();
 			aVars.remove(0);
 
 			if (IsArraysEqual(aVars, vargv))
@@ -2664,7 +2747,7 @@ function RemoveOnTickFunction(sFunction, ...)
 		{
 			if (vargv.len() > 0)
 			{
-				local aVars = clone func.GetInputArguments();
+				local aVars = clone func.GetArguments();
 				aVars.remove(0);
 
 				if (IsArraysEqual(aVars, vargv))
@@ -2731,7 +2814,7 @@ function IsOnTickFunctionRegistered(sFunction, ...)
 	{
 		if (func.GetFunctionName() == sFunction)
 		{
-			local aVars = clone func.GetInputArguments();
+			local aVars = clone func.GetArguments();
 			aVars.remove(0);
 
 			if (IsArraysEqual(aVars, vargv))
@@ -2742,37 +2825,117 @@ function IsOnTickFunctionRegistered(sFunction, ...)
 	return false;
 }
 
-/* Registration of custom chat commands */
+/* Listen a given button */
 
-/** Register chat command. ToDo: add hash table?
-* Signature: CChatCommand RegisterChatCommand(string command, function callFunction, bool bInputPlayerHandle, bool bInputValue)
+/** Register callback function for a specified button
+* Signature: CButtonListener RegisterButtonListener(int button, string callFunction, int presstype, int team)
 */
 
-function RegisterChatCommand(sCommand = null, func = null, bInputPlayerHandle = false, bInputValue = false)
+function RegisterButtonListener(iButton, sFunction, iType = BUTTON_STATE_PRESSED, iTeam = TEAM_EVERYONE)
 {
-	if (typeof sCommand == "string" && typeof func == "function" && typeof bInputPlayerHandle == "bool" && typeof bInputValue == "bool")
+	if (typeof iButton == "integer" && typeof sFunction == "string" && typeof iTeam == "integer" && typeof iType == "integer")
 	{
-		sCommand = sCommand.tolower();
+		Assert( iType >= BUTTON_STATE_PRESSED && iType <= BUTTON_STATE_HOLD, "Invalid button type", true );
+		Assert( iTeam >= TEAM_SURVIVOR && iTeam <= TEAM_EVERYONE, "Invalid team", true );
 
-		local ChatCommand = CChatCommand(sCommand, func, bInputPlayerHandle, bInputValue);
-		
-		foreach (idx, command in g_aChatCommands)
+		foreach (button in g_aButtonsListener)
 		{
-			if (sCommand == command.GetCommand())
+			if (button.GetButton() == iButton && button.GetFunctionName() == sFunction)
 			{
-				g_aChatCommands[idx] = ChatCommand;
-				printf("[RegisterChatCommand] Already registered, but chat command '%s' has been replaced by an existing one", sCommand);
+				printf("[RegisterButtonListener] Button '%d' with callback function '%s' already registered", iButton, sFunction);
 				return;
 			}
 		}
 
-		printf("[RegisterChatCommand] Chat command '%s' has been registered", sCommand);
-		g_aChatCommands.push(ChatCommand);
+		local __buttonlistener = CButtonListener(iButton, sFunction, iType, iTeam);
 
+		printf("[RegisterButtonListener] Button '%d' with callback function '%s' has been registered", iButton, sFunction);
+		g_aButtonsListener.push(__buttonlistener);
+
+		return __buttonlistener;
+	}
+	else
+	{
+		printl("[RegisterButtonListener] Wrong type of variable");
+	}
+}
+
+/** Remove registered button or bound callback function
+* Signature: void RemoveButtonListener(int button, string callFunction)
+*/
+
+function RemoveButtonListener(iButton, sFunction = null)
+{
+	if (typeof iButton != "integer")
+	{
+		printl("[RemoveButtonListener] Wrong type of variable");
 		return;
 	}
 
-	printl("[RegisterChatCommand] Wrong type of variable");
+	local bFound = false;
+
+	if (sFunction == null)
+	{
+		for (local i = 0; i < g_aButtonsListener.len(); ++i)
+		{
+			if (g_aButtonsListener[i].GetButton() == iButton)
+			{
+				bFound = true;
+
+				g_aButtonsListener.remove(i);
+				--i;
+			}
+		}
+	}
+	else
+	{
+		foreach (idx, button in g_aButtonsListener)
+		{
+			if (button.GetButton() == iButton && button.GetFunctionName() == sFunction)
+			{
+				printf("[RemoveButtonListener] Callback function '%s' for button '%d' has been removed", sFunction, iButton);
+				g_aButtonsListener.remove(idx);
+				return;
+			}
+		}
+	}
+
+	if (bFound)
+		printf("[RemoveButtonListener] Button '%d' has been removed", iButton);
+	else
+		printf("[RemoveButtonListener] Button '%d' is not registered", iButton);
+}
+
+/* Registration of custom chat commands */
+
+/** Register chat command
+* Signature: CChatCommand RegisterChatCommand(string command, function callFunction, bool bProcessCaller, bool bProcessArguments)
+*/
+
+function RegisterChatCommand(sCommand, func, bProcessCaller = true, bProcessArguments = false)
+{
+	if (typeof sCommand == "string" && typeof func == "function" && typeof bProcessCaller == "bool" && typeof bProcessArguments == "bool")
+	{
+		sCommand = sCommand.tolower();
+
+		if (sCommand in g_ChatCommands)
+		{
+			printf("[RegisterChatCommand] Chat command '%s' already registered", sCommand);
+		}
+		else
+		{
+			local __chatcmd = CChatCommand(sCommand, func, bProcessCaller, bProcessArguments);
+
+			g_ChatCommands[sCommand] <- __chatcmd;
+			printf("[RegisterChatCommand] Chat command '%s' has been registered", sCommand);
+
+			return __chatcmd;
+		}
+	}
+	else
+	{
+		printl("[RegisterChatCommand] Wrong type of variable");
+	}
 }
 
 /** Remove chat command
@@ -2784,130 +2947,53 @@ function RemoveChatCommand(sCommand = null)
 	if (typeof sCommand != "string")
 	{
 		printl("[RemoveChatCommand] Wrong type of variable");
-		return;
 	}
-
-	sCommand = sCommand.tolower();
-
-	foreach (idx, command in g_aChatCommands)
-	{
-		if (sCommand == command.GetCommand())
-		{
-			g_aChatCommands.remove(idx);
-			printf("[RemoveChatCommand] Chat command '%s' has been removed", sCommand);
-			return;
-		}
-	}
-
-	printf("[RemoveChatCommand] Chat command '%s' is not registered", sCommand);
-}
-
-/* Listen a given button */
-
-/** Register callback function for a specified button
-* Signature: CButtonListener RegisterButtonListener(int button, string callFunction, int presstype, int team)
-*/
-
-function RegisterButtonListener(iButton = null, sFunction = null, iType = eButtonType.Pressed, iTeam = eTeam.Everyone)
-{
-	if (typeof iButton == "integer" && typeof sFunction == "string" && typeof iTeam == "integer" && typeof iType == "integer")
-	{
-		if (eButtonType.Pressed < iType && iType > eButtonType.Hold || eTeam.Everyone < iTeam && iTeam > eTeam.Infected)
-		{
-			printl("[RegisterButtonListener] Invalid button type or team");
-			return;
-		}
-
-		foreach (button in g_aButtonsListener)
-		{
-			if (button.GetButton() == iButton && button.GetFunction() == sFunction)
-			{
-				printf("[RegisterButtonListener] Button '%d' with callback function '%s' already registered", iButton, sFunction);
-				return;
-			}
-		}
-
-		printf("[RegisterButtonListener] Button '%d' with callback function '%s' has been registered", iButton, sFunction);
-		g_aButtonsListener.push(CButtonListener(iButton, sFunction, iType, iTeam));
-
-		return;
-	}
-
-	printl("[RegisterButtonListener] Wrong type of variable");
-}
-
-/** Remove registered button or bound callback function
-* Signature: void RemoveButtonListener(int button, string callFunction)
-*/
-
-function RemoveButtonListener(iButton = null, sFunction = null)
-{
-	if (typeof iButton != "integer")
-	{
-		printl("[RemoveButtonListener] Wrong type of variable");
-		return;
-	}
-
-	foreach (idx, button in g_aButtonsListener)
-	{
-		if (button.GetButton() == iButton)
-		{
-			if (sFunction != null && button.GetFunction() == sFunction)
-			{
-				printf("[RemoveButtonListener] Callback function '%s' for button '%d' has been removed", sFunction, iButton);
-				g_aButtonsListener.remove(idx);
-				return;
-			}
-
-			local shift = 0;
-			local aButtons = [];
-
-			for (local i = 0; i < g_aButtonsListener.len(); ++i)
-			{
-				if (g_aButtonsListener[i].GetButton() == iButton)
-					aButtons.push(i);
-			}
-
-			for (local j = 0; j < aButtons.len(); ++j)
-			{
-				g_aButtonsListener.remove(aButtons[j] - shift);
-				++shift;
-			}
-
-			printf("[RemoveButtonListener] Button '%d' has been removed", iButton);
-			return;
-		}
-	}
-
-	printf("[RemoveButtonListener] Button '%d' is not registered", iButton);
-}
-
-/** Register user command
-* Signature: CUserCommand RegisterUserCommand(string command, function callFunction, bool bInputValue, bool bInputPlayerHandle)
-*/
-
-function RegisterUserCommand(sCommand = null, func = null, bInputValue = false, bInputPlayerHandle = true)
-{
-	if (typeof sCommand == "string" && typeof func == "function" && typeof bInputValue == "bool" && typeof bInputPlayerHandle == "bool")
+	else
 	{
 		sCommand = sCommand.tolower();
 
-		foreach (usercmd in g_aUserCommands)
+		if (sCommand in g_ChatCommands)
 		{
-			if (usercmd.GetCommand() == sCommand)
-			{
-				printf("[RegisterUserCommand] User command '%s' already registered", sCommand);
-				return;
-			}
+			printf("[RemoveChatCommand] Chat command '%s' has been removed", sCommand);
+			delete g_ChatCommands[sCommand];
 		}
-
-		printf("[RegisterUserCommand] User command '%s' has been registered", sCommand);
-		g_aUserCommands.push(CUserCommand(sCommand, func, bInputValue, bInputPlayerHandle));
-
-		return;
+		else
+		{
+			printf("[RemoveChatCommand] Chat command '%s' is not registered", sCommand);
+		}
 	}
+}
 
-	printl("[RegisterUserCommand] Wrong type of variable");
+/* Registration of custom console commands */
+
+/** Register user command
+* Signature: CUserCommand RegisterUserCommand(string command, function callFunction, bool bProcessArguments, bool bProcessCaller)
+*/
+
+function RegisterUserCommand(sCommand, func, bProcessCaller = true, bProcessArguments = false)
+{
+	if (typeof sCommand == "string" && typeof func == "function" && typeof bProcessArguments == "bool" && typeof bProcessCaller == "bool")
+	{
+		sCommand = sCommand.tolower();
+
+		if (sCommand in g_UserCommands)
+		{
+			printf("[RegisterUserCommand] User command '%s' already registered", sCommand);
+		}
+		else
+		{
+			local __usercmd = CUserCommand(sCommand, func, bProcessCaller, bProcessArguments);
+
+			g_UserCommands[sCommand] <- __usercmd;
+			printf("[RegisterUserCommand] User command '%s' has been registered", sCommand);
+
+			return __usercmd;
+		}
+	}
+	else
+	{
+		printl("[RegisterUserCommand] Wrong type of variable");
+	}
 }
 
 /** Remove user command
@@ -2919,40 +3005,117 @@ function RemoveUserCommand(sCommand = null)
 	if (typeof sCommand != "string")
 	{
 		printl("[RemoveUserCommand] Wrong type of variable");
-		return;
 	}
-
-	sCommand = sCommand.tolower();
-
-	foreach (idx, usercmd in g_aUserCommands)
+	else
 	{
-		if (usercmd.GetCommand() == sCommand)
+		sCommand = sCommand.tolower();
+
+		if (sCommand in g_UserCommands)
 		{
 			printf("[RemoveUserCommand] User command '%s' has been removed", sCommand);
-			g_aUserCommands.remove(idx);
-			return;
+			delete g_UserCommands[sCommand];
+		}
+		else
+		{
+			printf("[RemoveUserCommand] User command '%s' is not registered", sCommand);
 		}
 	}
-
-	printf("[RemoveUserCommand] User command '%s' is not registered", sCommand);
 }
 
 /* Ready-made templates */
 
-function LOU_OnRoundStart(tParams)
+// Entities
+FindEntityByClassname <- Entities.FindByClassname.bindenv(Entities);
+FindEntityByClassnameNearest <- Entities.FindByClassnameNearest.bindenv(Entities);
+FindEntityByClassnameWithin <- Entities.FindByClassnameWithin.bindenv(Entities);
+FindEntityByModel <- Entities.FindByModel.bindenv(Entities);
+FindEntityByName <- Entities.FindByName.bindenv(Entities);
+FindEntityByNameNearest <- Entities.FindByNameNearest.bindenv(Entities);
+FindEntityByNameWithin <- Entities.FindByNameWithin.bindenv(Entities);
+FindEntityByTarget <- Entities.FindByTarget.bindenv(Entities);
+FindEntityInSphere <- Entities.FindInSphere.bindenv(Entities);
+FirstEntity <- Entities.First.bindenv(Entities);
+NextEntity <- Entities.Next.bindenv(Entities);
+
+// NetProps
+GetNetPropArraySize <- NetProps.GetPropArraySize.bindenv(NetProps);
+GetNetPropEntity <- NetProps.GetPropEntity.bindenv(NetProps);
+GetNetPropEntityArray <- NetProps.GetPropEntityArray.bindenv(NetProps);
+GetNetPropFloat <- NetProps.GetPropFloat.bindenv(NetProps);
+GetNetPropFloatArray <- NetProps.GetPropFloatArray.bindenv(NetProps);
+GetNetPropInt <- NetProps.GetPropInt.bindenv(NetProps);
+GetNetPropIntArray <- NetProps.GetPropIntArray.bindenv(NetProps);
+GetNetPropString <- NetProps.GetPropString.bindenv(NetProps);
+GetNetPropStringArray <- NetProps.GetPropStringArray.bindenv(NetProps);
+GetNetPropType <- NetProps.GetPropType.bindenv(NetProps);
+GetNetPropVector <- NetProps.GetPropVector.bindenv(NetProps);
+GetNetPropVectorArray <- NetProps.GetPropVectorArray.bindenv(NetProps);
+HasNetProp <- NetProps.HasProp.bindenv(NetProps);
+SetNetPropEntity <- NetProps.SetPropEntity.bindenv(NetProps);
+SetNetPropEntityArray <- NetProps.SetPropEntityArray.bindenv(NetProps);
+SetNetPropFloat <- NetProps.SetPropFloat.bindenv(NetProps);
+SetNetPropFloatArray <- NetProps.SetPropFloatArray.bindenv(NetProps);
+SetNetPropInt <- NetProps.SetPropInt.bindenv(NetProps);
+SetNetPropIntArray <- NetProps.SetPropIntArray.bindenv(NetProps);
+SetNetPropString <- NetProps.SetPropString.bindenv(NetProps);
+SetNetPropStringArray <- NetProps.SetPropStringArray.bindenv(NetProps);
+SetNetPropVector <- NetProps.SetPropVector.bindenv(NetProps);
+SetNetPropVectorArray <- NetProps.SetPropVectorArray.bindenv(NetProps);
+
+function LU_OnRoundStart(tParams)
 {
 	foreach (func in g_Hooks.OnRoundStart)
-		func();
+	{
+		try
+		{
+			func();
+		}
+		catch (exception)
+		{
+			errorl("[LU_OnRoundStart->g_Hooks::OnRoundStart()] " + exception);
+			errorl("[LU_OnRoundStart->g_Hooks::OnRoundStart()] An error has occurred in a callback function");
+		}
+	}
 	
 	foreach (scriptPlugin in g_aScriptPlugins)
-		scriptPlugin.Load();
+	{
+		try
+		{
+			scriptPlugin.Load();
+		}
+		catch (exception)
+		{
+			errorl("[LU_OnRoundStart->IScriptPlugin::Load()] " + exception);
+			errorl("[LU_OnRoundStart->IScriptPlugin::Load()] An error has occurred in a callback function of a Script Plugin: " + scriptPlugin.GetScriptPluginName());
+		}
+	}
 
 	CreateTimer(0.01, function(){
-		foreach (func in g_Hooks.OnRoundStartPost)
-			func();
+		foreach (func in ::g_Hooks.OnRoundStartPost)
+		{
+			try
+			{
+				func();
+			}
+			catch (exception)
+			{
+				errorl("[LU_OnRoundStart->g_Hooks::OnRoundStartPost()] " + exception);
+				errorl("[LU_OnRoundStart->g_Hooks::OnRoundStartPost()] An error has occurred in a callback function");
+			}
+		}
 		
 		foreach (scriptPlugin in g_aScriptPlugins)
-			scriptPlugin.OnRoundStartPost();
+		{
+			try
+			{
+				scriptPlugin.OnRoundStartPost();
+			}
+			catch (exception)
+			{
+				errorl("[LU_OnRoundStart->IScriptPlugin::OnRoundStartPost()] " + exception);
+				errorl("[LU_OnRoundStart->IScriptPlugin::OnRoundStartPost()] An error has occurred in a callback function of a Script Plugin: " + scriptPlugin.GetScriptPluginName());
+			}
+		}
 
 		g_Hooks.OnRoundStartPost.clear();
 	});
@@ -2960,91 +3123,122 @@ function LOU_OnRoundStart(tParams)
 	g_Hooks.OnRoundStart.clear();
 }
 
-function LOU_OnRoundEnd(tParams)
+function LU_OnRoundEnd(tParams)
 {
 	foreach (func in g_Hooks.OnRoundEnd)
-		func();
+	{
+		try
+		{
+			func();
+		}
+		catch (exception)
+		{
+			errorl("[LU_OnRoundEnd->g_Hooks::OnRoundEnd()] " + exception);
+			errorl("[LU_OnRoundEnd->g_Hooks::OnRoundEnd()] An error has occurred in a callback function");
+		}
+	}
 
 	foreach (scriptPlugin in g_aScriptPlugins)
-		scriptPlugin.OnRoundEnd();
+	{
+		try
+		{
+			scriptPlugin.OnRoundEnd();
+		}
+		catch (exception)
+		{
+			errorl("[LU_OnRoundEnd->IScriptPlugin::OnRoundEnd()] " + exception);
+			errorl("[LU_OnRoundEnd->IScriptPlugin::OnRoundEnd()] An error has occurred in a callback function of a Script Plugin: " + scriptPlugin.GetScriptPluginName());
+		}
+	}
 	
 	delete ::ifaces_initialized;
 }
 
-function LOU_OnPlayerSay(tParams)
+function LU_OnPlayerSay(tParams)
 {
-	if (g_aChatCommands.len() > 0 && tParams["_player"])
-	{
-		local hPlayer = tParams["_player"];
-		local sText = tParams.text.tolower();
-		local sCommand = split(sText, " ")[0];
-		local sValue, aArgs, Function, bInputHandle, bInputValue, aArgsTemp;
+	local hPlayer = tParams["_player"];
+	local sText = tParams.text.tolower();
 
-		foreach (command in g_aChatCommands)
+	if (tParams["_player"])
+	{
+		if (sText == "!lu_plugins")
 		{
-			if (sCommand == command.GetCommand())
+			if ("ClientPrint" in getroottable())
 			{
-				LOU_AnalyzeCommand(command, sText, hPlayer, " ");
+				local it = 1;
+				local sPlugins = "[Script Plugins List]\n";
+
+				foreach (plugin in g_aScriptPlugins)
+				{
+					sPlugins += "[" + it++ + "] " + plugin.GetScriptPluginName() + "\n"; 
+				}
+
+				ClientPrint(hPlayer, HUD_PRINTCONSOLE, sPlugins);
+			}
+		}
+		else if (g_ChatCommands.len() > 0)
+		{
+			local sCommand = split(sText, " ")[0];
+
+			if (sCommand in g_ChatCommands)
+			{
+				LU_AnalyzeCommand(g_ChatCommands[sCommand], sText, hPlayer, " ");
 			}
 		}
 	}
 }
 
-function LOU_AnalyzeCommand(objCommand, sArgs, hPlayer, sSeparator)
+function LU_AnalyzeCommand(command, sArgs, hPlayer, sSeparator)
 {
-	local sValue = null;
-	local aArgs = [this];
+	local aArgs = null;
 
-	local Function = objCommand.GetCallingFunction();
-	local bInputHandle = objCommand.GetInputPlayerHandle();
-	local bInputValue = objCommand.GetInputValue();
+	local func = command.GetCallingFunction();
+	local bProcessCaller = command.ProcessCaller();
+	local bProcessArguments = command.ProcessArguments();
 
-	if (bInputValue)
+	if (bProcessArguments)
 	{
-		local aArgsTemp = split(sArgs, sSeparator);
+		aArgs = split(sArgs, sSeparator);
 
-		foreach (idx, arg in aArgsTemp)
+		if (aArgs.len() > 1)
 		{
-			if (idx > 0)
-			{
-				if (!sValue)
-					sValue = arg;
-				else
-					sValue += " " + arg;
-			}
+			aArgs.remove(0);
 		}
-
-		if (!sValue)
-			sValue = CMD_EMPTY_ARGUMENT;
+		else
+		{
+			aArgs = null;
+		}
 	}
 
-	if (sValue != CMD_EMPTY_ARGUMENT && sValue != null)
-		sValue = sValue.tolower();
-
-	if (bInputHandle && !bInputValue)
-		aArgs.extend([hPlayer]);
-	else if (!bInputHandle && bInputValue)
-		aArgs.extend([sValue]);
-	else if (bInputHandle && bInputValue)
-		aArgs.extend([hPlayer, sValue]);
-
-	Function.acall(aArgs);
+	if (bProcessCaller && !bProcessArguments)
+	{
+		func(hPlayer);
+	}
+	else if (bProcessCaller && bProcessArguments)
+	{
+		func(hPlayer, aArgs);
+	}
+	else if (!bProcessCaller && bProcessArguments)
+	{
+		func(aArgs);
+	}
 }
 
-function LOU_CheckButtons(hPlayer, button)
+function LU_CheckButtons(hPlayer, button)
 {
 	local buttons;
-	local button_type = button.GetType();
+	local button_type = button.GetPressType();
 	local idx = hPlayer.GetEntityIndex();
 
-	if (button_type == eButtonType.Pressed)
+	if (button_type == BUTTON_STATE_PRESSED)
 		buttons = NetProps.GetPropInt(hPlayer, "m_afButtonPressed");
-	else if (button_type == eButtonType.Released)
+	else if (button_type == BUTTON_STATE_RELEASED)
 		buttons = NetProps.GetPropInt(hPlayer, "m_afButtonReleased");
 	else
 		buttons = NetProps.GetPropInt(hPlayer, "m_nButtons");
 
-	if (buttons & button.GetButton()) button.GetCallingFunction()(hPlayer);
+	if (buttons & button.GetButton())
+		button.GetCallingFunction()(hPlayer);
 }
 
 function OnTickCall()
@@ -3059,7 +3253,7 @@ function OnTickCall()
 	{
 		try
 		{
-			g_aOnTickFunctions[i].GetCallingFunction().acall(g_aOnTickFunctions[i].GetInputArguments());
+			g_aOnTickFunctions[i].GetCallingFunction().acall(g_aOnTickFunctions[i].GetArguments());
 		}
 		catch (exception)
 		{
@@ -3077,7 +3271,7 @@ function OnTickCall()
 		{
 			try
 			{
-				g_aTimers[idx].GetCallingFunction().acall(g_aTimers[idx].GetInputArguments());
+				g_aTimers[idx].GetCallingFunction().acall(g_aTimers[idx].GetArguments());
 			}
 			catch (exception)
 			{
@@ -3109,9 +3303,8 @@ function OnTickCall()
 
 			try
 			{
-				switch (cvar.m_sType)
+				if (cvar.m_sType == "integer")
 				{
-				case "integer":
 					NewValue = NewValue.tointeger();
 					CurrentValue = CurrentValue.tointeger();
 
@@ -3139,11 +3332,12 @@ function OnTickCall()
 						if (CurrentValue > max) bProhibitChangeHook = true;
 						if (NewValue > max) NewValue = max;
 					}
-					break;
-
-				case "float":
+				}
+				else if (cvar.m_sType == "float")
+				{
 					min = cvar.m_flMinValue;
 					max = cvar.m_flMaxValue;
+					
 					NewValue = NewValue.tofloat();
 					CurrentValue = CurrentValue.tofloat();
 
@@ -3164,7 +3358,6 @@ function OnTickCall()
 						if (CurrentValue > max) bProhibitChangeHook = true;
 						if (NewValue > max) NewValue = max;
 					}
-					break;
 				}
 			}
 			catch (exception)
@@ -3199,12 +3392,19 @@ function ProcessHooks_Think()
 			{
 				local team = button.GetTeam();
 
-				if (team == eTeam.Everyone)
-					LOU_CheckButtons(hPlayer, button);
-				else if (team == eTeam.Survivor && hPlayer.IsSurvivor())
-					LOU_CheckButtons(hPlayer, button);
+				if (team == TEAM_EVERYONE)
+				{
+					LU_CheckButtons(hPlayer, button);
+				}
+				else if (team == TEAM_SURVIVOR)
+				{
+					if (hPlayer.IsSurvivor())
+						LU_CheckButtons(hPlayer, button);
+				}
 				else
-					LOU_CheckButtons(hPlayer, button);
+				{
+					LU_CheckButtons(hPlayer, button);
+				}
 			}
 
 			for (local i = 0; i < OnIteratePlayersPerTick_callbacks.len(); ++i)
@@ -3228,8 +3428,10 @@ function ProcessHooks_Think()
 				{
 					errorl("[Hooks Watchdog] " + exception);
 					errorl("[Hooks Watchdog] An error has occurred, OnIteratePlayersPerTick's hook function has been removed");
+
 					g_Hooks.OnIteratePlayersPerTick.remove(i);
 					OnIteratePlayersPerTick_callbacks.remove(i);
+
 					--i;
 				}
 			}
@@ -3246,13 +3448,33 @@ function ExtendClassMethods_Think()
 		ExtendClassMethods();
 		RemoveOnTickFunction("ExtendClassMethods_Think");
 
-		printl("[ExtendClassMethods_Think] Success");
+		printl("[ExtendClassMethods_Think] New methods added");
 
 		foreach (func in g_Hooks.OnExtendClassMethods)
-			func();
+		{
+			try
+			{
+				func();
+			}
+			catch (exception)
+			{
+				errorl("[LU_OnRoundEnd->g_Hooks::OnExtendClassMethods()] " + exception);
+				errorl("[LU_OnRoundEnd->g_Hooks::OnExtendClassMethods()] An error has occurred in a callback function");
+			}
+		}
 
 		foreach (scriptPlugin in g_aScriptPlugins)
-			scriptPlugin.OnExtendClassMethods();
+		{
+			try
+			{
+				scriptPlugin.OnExtendClassMethods();
+			}
+			catch (exception)
+			{
+				errorl("[LU_OnRoundStart->IScriptPlugin::OnExtendClassMethods()] " + exception);
+				errorl("[LU_OnRoundStart->IScriptPlugin::OnExtendClassMethods()] An error has occurred in a callback function of a Script Plugin: " + scriptPlugin.GetScriptPluginName());
+			}
+		}
 		
 		g_Hooks.OnExtendClassMethods.clear();
 
@@ -3263,15 +3485,15 @@ function ExtendClassMethods_Think()
 RegisterLoopFunction("OnTickCall", 0.01);
 RegisterOnTickFunction("ExtendClassMethods_Think");
 
-HookEvent("player_say", LOU_OnPlayerSay);
-HookEvent("round_start", LOU_OnRoundStart);
-HookEvent("round_end", LOU_OnRoundEnd);
+HookEvent("player_say", LU_OnPlayerSay);
+HookEvent("round_start", LU_OnRoundStart);
+HookEvent("round_end", LU_OnRoundEnd);
 
 // Get map name
 
 if (!g_sMapName)
 {
-	function GetQueryData(queryData)
+	function __get_query_data(queryData)
 	{
 		if (queryData["concept"] == "GetQueryData")
 			::g_sMapName = queryData["map"];
@@ -3279,57 +3501,113 @@ if (!g_sMapName)
 		return false;
 	}
 
-	if (!("QueryDataRules" in this))
+	if (!("rrule__get_query_data" in this))
 	{
-		QueryDataRules <- true;
+		rrule__get_query_data <- true;
+
 		g_rr.rr_ProcessRules([
 			{
-				name = "QueryData"
-				criteria = [["concept", "GetQueryData"], [GetQueryData]]
-				responses = [{scenename = ""}]
-				group_params = g_rr.RGroupParams({ permitrepeats = true, sequential = false, norepeat = false })
+				name = "__get_query_data"
+				criteria = [ ["concept", "__get_query_data"], [__get_query_data] ]
+				responses = [ { scenename = "" } ]
+				group_params = g_rr.RGroupParams( { permitrepeats = true, sequential = false, norepeat = false } )
 			}
 		]);
 	}
 
 	if (Entities.FindByClassname(null, "func_orator"))
 	{
-		EntFire("func_orator", "SpeakResponseConcept", "GetQueryData");
+		EntFire("func_orator", "SpeakResponseConcept", "__get_query_data");
 	}
 	else
 	{
 		local orator;
-		if (orator = SpawnEntityFromTable("func_orator", { targetname = "dummy_orator", origin = Vector(0,0,0), angles = Vector(0,0,0) }))
+		if (orator = SpawnEntityFromTable("func_orator", { targetname = "dummy_orator" }))
 		{
-			DoEntFire("!self", "SpeakResponseConcept", "GetQueryData", 0.0, null, orator);
+			DoEntFire("!self", "SpeakResponseConcept", "__get_query_data", 0.0, null, orator);
 			DoEntFire("!self", "Kill", "", 0.0, null, orator);
 		}
 	}
 }
 
-// ScriptedMode Hooks
+// Scripted Mode Hooks
 
 if (hook_UserConsoleCommand)
 {
 
 function UserConsoleCommand(hPlayer, sArgs)
 {
-	if (g_aUserCommands.len() > 0 && sArgs)
+	if (sArgs)
 	{
 		sArgs = sArgs.tolower();
 
-		local aArgs = split(sArgs, ",");
-		local sCommand = aArgs[0];
-		local sValue, aArgs, Function, bInputHandle, bInputValue, aArgsTemp;
-
-		foreach (command in g_aUserCommands)
+		if (sArgs == "lu_plugins")
 		{
-			if (sCommand == command.GetCommand())
+			if ("ClientPrint" in getroottable())
 			{
-				LOU_AnalyzeCommand(command, sArgs, hPlayer, ",");
+				local it = 1;
+				local sPlugins = "[Script Plugins List]\n";
+
+				foreach (plugin in g_aScriptPlugins)
+				{
+					sPlugins += "[" + it++ + "] " + plugin.GetScriptPluginName() + "\n"; 
+				}
+
+				ClientPrint(hPlayer, HUD_PRINTCONSOLE, sPlugins);
+			}
+		}
+		else if (g_UserCommands.len() > 0)
+		{
+			local aArgs = split(sArgs, ",");
+			local sCommand = aArgs[0];
+
+			if (sCommand in g_UserCommands)
+			{
+				LU_AnalyzeCommand(g_UserCommands[sCommand], sArgs, hPlayer, " ");
 			}
 		}
 	}
+}
+
+}
+
+if (hook_InterceptChat)
+{
+
+function InterceptChat(sMsg, hPlayer)
+{
+	local retVal = true;
+	local bRetValOverriden = false;
+	local showMessage = { value = true };
+
+	for (local i = 0; i < g_Hooks.OnInterceptChat.len(); ++i)
+	{
+		showMessage.value = true;
+
+		try
+		{
+			local hookReturnCode = g_Hooks.OnInterceptChat[i](showMessage, sMsg, hPlayer);
+
+			if (hookReturnCode == HOOK_STOP)
+			{
+				return showMessage.value;
+			}
+			else if (hookReturnCode == HOOK_OVERRIDE && !bRetValOverriden)
+			{
+				retVal = showMessage.value;
+				bRetValOverriden = true;
+			}
+		}
+		catch (exception)
+		{
+			errorl("[Hooks Watchdog] " + exception);
+			errorl("[Hooks Watchdog] An error has occurred, InterceptChat's hook function has been removed");
+			g_Hooks.OnInterceptChat.remove(i);
+			--i;
+		}
+	}
+
+	return retVal;
 }
 
 }
@@ -3498,482 +3776,4 @@ function CanPickupObject(hObject)
 
 }
 
-/*===============================*\
- *         Math Functions        *
-\*===============================*/
-
-/** If the value is not a number
-* Signature: bool Math.IsNaN(float value)
-*/
-
-function Math::IsNaN(value)
-{
-	return ["1.#INF", "-1.#INF", "1.#IND", "-1.#IND", "1.#SNAN", "1.#QNAN"].find(value.tostring()) != null;
-}
-
-/** If the value is between two values
-* Signature: bool Math.Between(float value, float min, float max)
-*/
-
-function Math::Between(value, min, max)
-{
-	return max > min ? (value > min && value < max) : (value > max && value < min);
-}
-
-/** Get the sign of value
-* Signature: int Math.Sign(float value)
-*/
-
-function Math::Sign(value)
-{
-	return value <=> 0;
-}
-
-/** Get the minimum value
-* Signature: float Math.Min(float a, float b)
-*/
-
-function Math::Min(a, b)
-{
-	return a < b ? a : b;
-}
-
-/** Get the maximum value
-* Signature: float Math.Max(float a, float, b)
-*/
-
-function Math::Max(a, b)
-{
-	return a > b ? a : b;
-}
-
-/** Get the clamped value
-* Signature: float Math.Clamp(float value, float min, float max)
-*/
-
-function Math::Clamp(n, min, max)
-{
-	return n < min ? min : (n > max ? max : n);
-}
-
-/** Linear Interpolation
-* Signature: float Math.Lerp(float start, float end, float percent)
-*/
-
-function Math::Lerp(a, b, t)
-{
-	return a + (b - a) * t;
-}
-
-/** Linear Interpolation #2
-* Signature: float Math.FLerp(float x, float x_start, float x_end, float y_start, float y_end)
-*/
-
-function Math::FLerp(x, x_start, x_end, y_start, y_end)
-{
-	x_end = x_end.tofloat(); x_start = x_start.tofloat();
-	return y_start + ((x - x_start) * (y_end - y_start) / (x_end - x_start));
-}
-
-/** Returns the normalized angle
-* Signature: float Math.NormalizeAngle(float angle)
-*/
-
-function Math::NormalizeAngle(flAngle)
-{
-	while (flAngle < -180.0) flAngle += 360.0;
-	while (flAngle > 180.0) flAngle -= 360.0;
-
-	return flAngle;
-}
-
-/*===============================*\
- *   Additional Vector Methods   *
-\*===============================*/
-
-/** Overload of '/' operator
-* Example: Vector(1, 2, 3) / 2
-*/
-
-function Vector::_div(value)
-{
-	return this.Scale(1.0 / value);
-}
-
-/** Returns true if a vector is zero
-* Signature: Vector Vector.IsZero(float tolerance)
-*/
-
-function Vector::IsZero(flTolerance = 0.001)
-{
-	return x >= -flTolerance && x <= flTolerance && y >= -flTolerance && y <= flTolerance && z >= -flTolerance && z <= flTolerance;
-}
-
-/** Returns a normalized vector
-* Signature: Vector Vector.Normalize()
-*/
-
-function Vector::Normalize()
-{
-	return this.Scale(1.0 / (this.Length() + FLT_EPSILON));
-}
-
-/** Returns the projection of vector from direction
-* Signature: Vector Vector.Project(Vector vector)
-*/
-
-function Vector::Project(vector)
-{
-	local vecNorm = vector.Normalize();
-	return vecNorm.Scale(this.Dot(vecNorm));
-}
-
-/** Returns the rejection of vector from direction
-* Signature: Vector Vector.Reject(Vector vector)
-*/
-
-function Vector::Reject(vector)
-{
-	local vecNorm = vector.Normalize();
-	return this - vecNorm.Scale(this.Dot(vecNorm));
-}
-
-/** Returns the reflection of a vector off a surface that have the specified normal
-* Signature: Vector VMath.Reflect(Vector vector_a, Vector vector_b, float factor, bool projectMethod)
-*/
-
-function VMath::Reflect(vector_a, vector_b, flFactor = 2.0, bProjectMethod = true)
-{
-	return bProjectMethod ? vector_a - (vector_a.Project(vector_b) * flFactor) : (vector_a.Reject(vector_b) * flFactor) - vector_a;
-}
-
-/** The scalar product of two vectors
-* Signature: float VMath.Dot(Vector vector_a, Vector vector_b)
-*/
-
-function VMath::Dot(vector_a, vector_b)
-{
-	return (vector_a.x * vector_b.x) + (vector_a.y * vector_b.y) + (vector_a.z * vector_b.z);
-}
-
-/** The vector product of two vectors
-* Signature: Vector VMath.Cross(Vector vector_a, Vector vector_b)
-*/
-
-function VMath::Cross(vector_a, vector_b)
-{
-	return Vector(vector_a.y * vector_b.z - vector_b.y * vector_a.z, vector_a.z * vector_b.x - vector_b.z * vector_a.x, vector_a.x * vector_b.y - vector_b.x * vector_a.y);
-}
-
-/** Returns the Forward Vector of angles
-* Signature: Vector VMath.Forward(QAngle angles)
-*/
-
-function VMath::Forward(eAngles)
-{
-	local flPitch = eAngles.x * Math.Deg2Rad;
-	local flYaw = eAngles.y * Math.Deg2Rad;
-
-	return Vector(cos(flPitch) * cos(flYaw), cos(flPitch) * sin(flYaw), sin(-flPitch));
-}
-
-/** Returns the Forward 2D Vector of angles
-* Signature: Vector VMath.Forward(QAngle angles)
-*/
-
-function VMath::Forward2D(eAngles)
-{
-	local flYaw = eAngles.y * Math.Deg2Rad;
-	return Vector(cos(flYaw), sin(flYaw), 0);
-}
-
-/** Returns the Left Vector of angles
-* Signature: Vector VMath.Left(QAngle angles)
-*/
-
-function VMath::Left(eAngles)
-{
-	local flPitch = eAngles.x * Math.Deg2Rad;
-	local flYaw = eAngles.y * Math.Deg2Rad;
-	local flRoll = eAngles.z * Math.Deg2Rad;
-
-	local flSinRoll, flSinPitch, flSinYaw, flCosRoll, flCosPitch, flCosYaw;
-
-	flSinRoll = sin(flRoll); flSinPitch = sin(flPitch); flSinYaw = sin(flYaw);
-	flCosRoll = cos(flRoll); flCosPitch = cos(flPitch); flCosYaw = cos(flYaw);
-
-	return Vector(-1 * flSinRoll * flSinPitch * flCosYaw + -1 * flCosRoll * -flSinYaw, -1 * flSinRoll * flSinPitch * flSinYaw + -1 * flCosRoll * flCosYaw, -1 * flSinRoll * flCosPitch);
-}
-
-/** Returns the Up Vector of angles
-* Signature: Vector VMath.Up(QAngle angles)
-*/
-
-function VMath::Up(eAngles)
-{
-	local flPitch = eAngles.x * Math.Deg2Rad;
-	local flYaw = eAngles.y * Math.Deg2Rad;
-	local flRoll = eAngles.z * Math.Deg2Rad;
-
-	local flSinRoll, flSinPitch, flSinYaw, flCosRoll, flCosPitch, flCosYaw;
-
-	flSinRoll = sin(flRoll); flSinPitch = sin(flPitch); flSinYaw = sin(flYaw);
-	flCosRoll = cos(flRoll); flCosPitch = cos(flPitch); flCosYaw = cos(flYaw);
-	
-	return Vector(flCosRoll * flSinPitch * flCosYaw + -flSinRoll * -flSinYaw, flCosRoll * flSinPitch * flSinYaw + -flSinRoll * flCosYaw, flCosRoll * flCosPitch);
-}
-
-/** Get the angle between two normalized vectors using the scalar product method (faster)
-* Signature: float GetAngleBetweenVectors(Vector vector_a, Vector vector_b)
-*/
-
-function GetAngleBetweenVectors(vector_a, vector_b)
-{
-	return acos(vector_a.Dot(vector_b)) * Math.Rad2Deg;
-}
-
-/** Get the angle between two normalized vectors using the vector product method
-* Signature: float GetAngleBetweenVectors(Vector vector_a, Vector vector_b)
-*/
-
-function GetAngleBetweenVectors2(vector_a, vector_b)
-{
-	return asin(vector_a.Cross(vector_b).Length()) * Math.Rad2Deg;
-}
-
-/** Convert the vector to matrix Nx1
-* Signature: CMatrix VectorToMatrix(Vector vec)
-*/
-
-function VectorToMatrix(vec)
-{
-	if (vec instanceof Vector)
-		return CMatrix([ [vec.x], [vec.y], [vec.z] ], 3, 1);
-
-	if (vec instanceof Vector4D)
-		return CMatrix([ [vec.x], [vec.y], [vec.z], [vec.w] ], 4, 1);
-
-	if (vec instanceof Vector2D)
-		return CMatrix([ [vec.x], [vec.y] ], 2, 1);
-}
-
-/** Returns euler angles of the vector
-* Signature: QAngle VectorToQAngle(Vector vector)
-*/
-
-function VectorToQAngle(vector)
-{
-	if (vector.IsZero(0.0))
-		return QAngle(0, 0, 0);
-
-	local flPitch = -(atan(vector.z / vector.Length2D()) * Math.Rad2Deg);
-	local flYaw = atan(vector.y / vector.x) * Math.Rad2Deg;
-
-	if (vector.x < 0)
-		flYaw += 180;
-
-	return QAngle(flPitch, Math.IsNaN(flYaw) ? 0 : flYaw, 0);
-}
-
-/** Returns euler angles of the normalized vector
-* Signature: QAngle VectorToQAngle2(Vector direction)
-*/
-
-function VectorToQAngle2(vecDirection)
-{
-	local flPitch = asin(vecDirection.z);
-	local flYaw = asin(vecDirection.y / cos(flPitch)) * Math.Rad2Deg;
-
-	flPitch = -flPitch * Math.Rad2Deg;
-
-	if (vecDirection.x < 0)
-	{
-		flYaw *= -1;
-		flYaw -= 180;
-	}
-
-	return QAngle(flPitch, flYaw, 0);
-}
-
-/** Linear interpolation between two vectors
-* Signature: Vector VectorLerp(Vector vector_a, Vector vector_b, float time)
-*/
-
-function VectorLerp(vector_a, vector_b, t)
-{
-	return vector_a + (vector_b - vector_a) * t;
-}
-
-/** If the vector is between two vectors
-* Signature: bool VectorBetween(Vector vector_min, Vector vector_max, Vector vector)
-*/
-
-function VectorBetween(vector_min, vector_max, vector)
-{
-	return Math.Between(vector.x, vector_min.x, vector_max.x) && Math.Between(vector.y, vector_min.y, vector_max.y) && Math.Between(vector.z, vector_min.z, vector_max.z);
-}
-
-/*===============================*\
- *   Additional QAngle Methods   *
-\*===============================*/
-
-/** Returns the normalized angles of the player's pov
-* Signature: QAngle QAngle.Normalize()
-*/
-
-function QAngle::Normalize()
-{
-	local eAngles = this;
-
-	while (eAngles.x < -90.0) eAngles.x += 180.0;
-	while (eAngles.x > 90.0) eAngles.x -= 180.0;
-
-	while (eAngles.y < -180.0) eAngles.y += 360.0;
-	while (eAngles.y > 180.0) eAngles.y -= 360.0;
-
-	while (eAngles.z < -50.0) eAngles.z += 100.0;
-	while (eAngles.z > 50.0) eAngles.z -= 100.0;
-
-	return eAngles;
-}
-
-/** Interpolate euler angles via quaternions
-* Signature: QAngle OrientationLerp(QAngle a1, QAngle a2, float time, bool bSlerp, bool shortWay)
-*/
-
-function OrientationLerp(a1, a2, t, bSlerp, bShortWay)
-{
-	if (a1 == a2 || t == 0)
-		return a1;
-
-	if (t == 1)
-		return a2;
-
-	return bSlerp ? QuaternionSlerp(a1.ToQuat(), a2.ToQuat(), t, bShortWay).ToQAngle() : QuaternionLerp(a1.ToQuat(), a2.ToQuat(), t, bShortWay).ToQAngle();
-}
-
-/** Rotate euler angles using quaternion
-* Signature: QAngle RotateOrientationWithQuaternion(QAngle angles)
-*/
-
-function RotateOrientationWithQuaternion(eAngles)
-{
-	local qYaw = QuaternionRotation(Vector(0, 0, 1), Math.Deg2Rad * eAngles.y);
-	local qPitch = QuaternionRotation(Vector(0, -1, 0), Math.Deg2Rad * eAngles.x);
-	local qRoll = QuaternionRotation(Vector(1, 0, 0), Math.Deg2Rad * eAngles.z);
-
-	eAngles = qYaw.Multiply(qPitch).Multiply(qRoll).Invert().ToQAngle();
-	eAngles.y *= -1;
-	
-	return eAngles;
-}
-
-/*=================================*\
- *  Additional Quaternion Methods  *
-\*=================================*/
-
-/** Negating the imaginary part
-* Signature: Quaternion Quaternion.Conjugate()
-*/
-
-function Quaternion::Conjugate()
-{
-	return Quaternion(-x, -y, -z, w);
-}
-
-/** Inverse a quaternion
-* Signature: Quaternion Quaternion.Inverse()
-*/
-
-function Quaternion::Inverse()
-{
-	local q = this.Conjugate();
-	local norm = x * x + y * y + z * z + w * w;
-
-	return Quaternion(q.x / norm, q.y / norm, q.z / norm, q.w / norm);
-}
-
-/** Multiply a quaternion by another quaternion
-* Signature: Quaternion Quaternion.Multiply(Quaternion q)
-*/
-
-function Quaternion::Multiply(q)
-{
-	return Quaternion(w * q.x  +  x * q.w  +  y * q.z  -  z * q.y,
-					w * q.y  -  x * q.z  +  y * q.w  +  z * q.x,
-					w * q.z  +  x * q.y  -  y * q.x  +  z * q.w,
-					w * q.w  -  x * q.x  -  y * q.y  -  z * q.z);
-}
-
-/** Create a quaternion to rotate a normalized vector by a specific angle in radians
-* Signature: Quaternion QuaternionRotation(Vector direction, float angle)
-*/
-
-function QuaternionRotation(vecDirection, flAngle)
-{
-	local flSinAngle = sin(flAngle / 2.0);
-	return Quaternion(vecDirection.x * flSinAngle, vecDirection.y * flSinAngle, vecDirection.z * flSinAngle, cos(flAngle / 2.0));
-}
-
-/** Linear interpolation between two quaternions
-* Signature: Quaternion Quaternionlerp(Quaternion q1, Quaternion q2, float time, bool shortWay)
-*/
-
-function QuaternionLerp(q1, q2, t, bShortWay)
-{
-	if (q1 == q2 || t == 0)
-		return q1;
-
-	if (t == 1)
-		return q2;
-
-	local t2 = 1.0 - t;
-
-	if (bShortWay && q1.Dot(q2) < 0)
-	{
-		q1.x = -q1.x;
-		q1.y = -q1.y;
-		q1.z = -q1.z;
-		q1.w = -q1.w;
-	}
-	
-	return Quaternion(q1.x * t2 + q2.x * t, q1.y * t2 + q2.y * t, q1.z * t2 + q2.z * t, q1.w * t2 + q2.w * t);
-}
-
-/** Spherical linear interpolation between two quaternions
-* Signature: Quaternion QuaternionSlerp(Quaternion q1, Quaternion q2, float time, bool shortWay)
-*/
-
-function QuaternionSlerp(q1, q2, t, bShortWay)
-{
-	if (q1 == q2 || t == 0)
-		return q1;
-
-	if (t == 1)
-		return q2;
-
-	local flCosAngle = q1.Dot(q2);
-
-	if (bShortWay && flCosAngle < 0)
-	{
-		q2.x = -q2.x;
-		q2.y = -q2.y;
-		q2.z = -q2.z;
-		q2.w = -q2.w;
-		flCosAngle *= -1;
-	}
-
-	if (abs(flCosAngle) >= 1.0)
-		return q1;
-
-	local flAngle = acos(flCosAngle);
-	local flSinAngle = sqrt(1.0 - flCosAngle * flCosAngle);
-
-	if (fabs(flSinAngle) < 0.001)
-		return Quaternion(q1.x * 0.5 + q2.x * 0.5, q1.y * 0.5 + q2.y * 0.5, q1.z * 0.5 + q2.z * 0.5, q1.w * 0.5 + q2.w * 0.5);
-
-	local ratioA = sin((1 - t) * flAngle) / flSinAngle;
-	local ratioB = sin(t * flAngle) / flSinAngle;
-
-	return Quaternion(q1.x * ratioA + q2.x * ratioB, q1.y * ratioA + q2.y * ratioB, q1.z * ratioA + q2.z * ratioB, q1.w * ratioA + q2.w * ratioB);
-}
+printl("Loaded Library of Utils v" + LU_VERSION);
