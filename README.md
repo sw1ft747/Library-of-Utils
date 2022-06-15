@@ -1,15 +1,15 @@
-# Library of Utils
+# Library of Utils (VSLU)
 Multifunctional VScript library for Left 4 Dead 2
 
 Description of each function is contained in the source files
 
 # Installation
-Download and place **lib_utils** folder in ***Left 4 Dead 2/left4dead2/scripts/vscripts*** folder
+Download and place **vslu** folder in ***Left 4 Dead 2/left4dead2/scripts/vscripts/*** folder
 
 # Including in the game
 The library must be included in the root table, example:
 ```squirrel
-IncludeScript("lib_utils/lib", getroottable());
+IncludeScript( "vslu/lib", getroottable() );
 ```
 
 # Main features
@@ -25,9 +25,9 @@ Register console variables
 
 Useful math and vector math functions
 
-Additional matrix classes
+Matrix 3x4 class
 
-New methods for Vector, QAngle, Quaternion and CTerrorPlayer classes
+New methods for Vector, QAngle, Quaternion classes
 
 # Add-ons that use Library of Utils
 Dynamic Light: https://steamcommunity.com/sharedfiles/filedetails/?id=2261165699

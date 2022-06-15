@@ -24,7 +24,7 @@ class matrix3x4
 		{
 			local sType = typeof vargv[0];
 
-			if (sType == "array") // One array of arrays of values (3x4)
+			if (sType == "array") // Array of arrays of values (3x4)
 			{
 				local aMatrix = vargv[0];
 
@@ -129,9 +129,9 @@ class matrix3x4
 
 	function SetRotation(eAngles)
 	{
-		local flPitch = eAngles.x * Math.Deg2Rad;
-		local flYaw = eAngles.y * Math.Deg2Rad;
-		local flRoll = eAngles.z * Math.Deg2Rad;
+		local flPitch = eAngles.x * VSLU.Math.Deg2Rad;
+		local flYaw = eAngles.y * VSLU.Math.Deg2Rad;
+		local flRoll = eAngles.z * VSLU.Math.Deg2Rad;
 
 		local sy = sin(flYaw), cy = cos(flYaw);
 		local sp = sin(flPitch), cp = cos(flPitch);
@@ -251,21 +251,21 @@ class matrix3x4
 		if ( xyDist > 0.001 )
 		{
 			// (yaw)	y = ATAN( forward.y, forward.x );		-- in our space, forward is the X axis
-			angles.y = atan2( forward.y, forward.x ) * Math.Rad2Deg;
+			angles.y = atan2( forward.y, forward.x ) * VSLU.Math.Rad2Deg;
 
 			// (pitch)	x = ATAN( -forward.z, sqrt(forward.x*forward.x+forward.y*forward.y) );
-			angles.x = atan2( -forward.z, xyDist ) * Math.Rad2Deg;
+			angles.x = atan2( -forward.z, xyDist ) * VSLU.Math.Rad2Deg;
 
 			// (roll)	z = ATAN( left.z, up.z );
-			angles.z = atan2( left.z, up.z ) * Math.Rad2Deg;
+			angles.z = atan2( left.z, up.z ) * VSLU.Math.Rad2Deg;
 		}
 		else	// forward is mostly Z, gimbal lock-
 		{
 			// (yaw)	y = ATAN( -left.x, left.y );			-- forward is mostly z, so use right for yaw
-			angles.y = atan2( -left.x, left.y ) * Math.Rad2Deg;
+			angles.y = atan2( -left.x, left.y ) * VSLU.Math.Rad2Deg;
 
 			// (pitch)	x = ATAN( -forward.z, sqrt(forward.x*forward.x+forward.y*forward.y) );
-			angles.x = atan2( -forward.z, xyDist ) * Math.Rad2Deg;
+			angles.x = atan2( -forward.z, xyDist ) * VSLU.Math.Rad2Deg;
 
 			// Assume no roll in this case as one degree of freedom has been lost (i.e. yaw == roll)
 			angles.z = 0.0;
@@ -550,7 +550,7 @@ class matrix3x4
 
 	function EntityLocalSpaceToWorldSpace(hEntity, bAdjustModelScale = true)
 	{
-		if (hEntity && hEntity.IsValid())
+		if ( hEntity && hEntity.IsValid() )
 		{
 			bAdjustModelScale = bAdjustModelScale && NetProps.GetPropFloat(hEntity, "m_flModelScale") >= 0.0;
 
@@ -572,7 +572,7 @@ class matrix3x4
 	{
 		if (bTransformFromLocalSpace)
 		{
-			if (hEntity && hEntity.IsValid())
+			if ( hEntity && hEntity.IsValid() )
 			{
 				bAdjustModelScale = bAdjustModelScale && NetProps.GetPropFloat(hEntity, "m_flModelScale") >= 0.0;
 
@@ -593,9 +593,9 @@ class matrix3x4
 		}
 	}
 
-	// ==================================================
+	//==================================================
 	// References to described methods
-	// ==================================================
+	//==================================================
 
 	/** Set rotation matrix
 	* Signature: matrix3x4 AngleMatrix(QAngle angles)
@@ -657,9 +657,9 @@ class matrix3x4
 
 	function VectorITranslate(vecPoint) { return ITranslate(vecPoint); }
 
-	// ==================================================
+	//==================================================
 	// Override metamethods
-	// ==================================================
+	//==================================================
 
 	function _mul(other) // override '*' operator
 	{
@@ -684,299 +684,4 @@ class matrix3x4
 	}
 
 	matrix = null;
-}
-
-/** Class Matrix (junk)
-* Signature: class CMatrix(array matrix, int rows, int columns)
-*/
-
-class CMatrix
-{
-	constructor(matrix, iRows = null, iColumns = null)
-	{
-		if (iRows != null && iColumns != null && iRows > 0 && iColumns > 0)
-		{
-			m_iRows = iRows;
-			m_iColumns = iColumns;
-		}
-		else
-		{
-			local length = matrix.len();
-			local iWidestColumn = 0;
-
-			if (length > 0)
-			{
-				for (local i = 0; i < length; ++i)
-				{
-					if (iWidestColumn < matrix[i].len())
-						iWidestColumn = matrix[i].len();
-				}
-
-				for (local j = 0; j < length; ++j)
-				{
-					while (matrix[j].len() < iWidestColumn)
-						matrix[j].push(0.0);
-				}
-			}
-			else
-			{
-				matrix.push([0.0]);
-				iWidestColumn = length = 1;
-			}
-
-			m_iRows = length;
-			m_iColumns = iWidestColumn;
-		}
-
-		m_aMatrix = matrix;
-	}
-
-	function Multiply(matrix)
-	{
-		if (matrix instanceof CMatrix)
-		{
-			if (m_iColumns == matrix.GetRows())
-			{
-				local aMatrixOutput = [];
-				local aMatrix = matrix.GetMatrix();
-				local columns = matrix.GetColumns();
-
-				for (local n = 0; n < m_iRows; ++n)
-				{
-					aMatrixOutput.push([]);
-
-					for (local m = 0; m < columns; ++m)
-						aMatrixOutput[n].push(0.0);
-				}
-
-				for (local i = 0; i < m_iRows; ++i)
-				{
-					for (local j = 0; j < columns; ++j)
-					{
-						for (local k = 0; k < m_iColumns; ++k)
-						{
-							aMatrixOutput[i][j] += m_aMatrix[i][k] * aMatrix[k][j];
-						}
-					}
-				}
-				
-				return CMatrix(aMatrixOutput, m_iRows, columns);
-			}
-
-			throw "wrong matrix size";
-		}
-
-		throw "argument is not a matrix";
-	}
-
-	function Add(matrix)
-	{
-		if (matrix instanceof CMatrix)
-		{
-			if (m_iRows == matrix.GetRows() && m_iColumns == matrix.GetColumns())
-			{
-				local aMatrixOutput = [];
-				local aMatrix = matrix.GetMatrix();
-
-				for (local i = 0; i < m_iRows; ++i)
-				{
-					aMatrixOutput.push(GetRowArray(i));
-
-					for (local j = 0; j < m_iColumns; ++j)
-						aMatrixOutput[i][j] += aMatrix[i][j];
-				}
-
-				return CMatrix(aMatrixOutput, m_iRows, m_iColumns);
-			}
-
-			throw "wrong matrix size";
-		}
-
-		throw "expected a matrix";
-	}
-
-	function Scale(value)
-	{
-		local aMatrix = [];
-
-		for (local i = 0; i < m_iRows; ++i)
-		{
-			aMatrix.push(GetRowArray(i));
-
-			for (local j = 0; j < m_iColumns; ++j)
-				aMatrix[i][j] *= value;
-		}
-
-		return CMatrix(aMatrix, m_iRows, m_iColumns);
-	}
-
-	function Division(value)
-	{
-		return Scale(1.0 / value);
-	}
-
-	function Determinant()
-	{
-		if (!IsSquare())
-			throw "expected a square matrix";
-		
-		if (m_iRows == 1)
-			return m_aMatrix[0][0];
-
-		if (m_iRows == 2)
-			return m_aMatrix[0][0] * m_aMatrix[1][1] - m_aMatrix[0][1] * m_aMatrix[1][0];
-
-		local sign = 1;
-		local determinant = 0;
-		
-		if ("Vector" in getroottable() && m_aMatrix[0][0] instanceof Vector)
-			determinant = Vector(0.0, 0.0, 0.0);
-
-		for (local i = 0; i < m_iColumns; ++i)
-		{
-			determinant += m_aMatrix[0][i] * GetMinor(0, i).Determinant() * sign;
-			sign *= -1;
-		}
-
-		return (m_Determinant = determinant);
-	}
-
-	function Inverse()
-	{
-		if (!IsSquare())
-			throw "expected a square matrix";
-		
-		local aMatrixOutput = [];
-
-		for (local i = 0; i < m_iRows; ++i)
-		{
-			aMatrixOutput.push([]);
-
-			for (local j = 0; j < m_iColumns; ++j)
-				aMatrixOutput[i].push(GetMinor(i, j).Determinant() * ((i + j + 2) % 2 ? -1.0 : 1.0));
-		}
-
-		local matrix = CMatrix(aMatrixOutput, m_iRows, m_iColumns).Transpose();
-		return matrix.Division(Determinant());
-	}
-
-	function Transpose()
-	{
-		local aTransposeMatrix = [];
-
-		for (local i = 0; i < m_iColumns; ++i)
-			aTransposeMatrix.push(GetColumnArray(i));
-			
-		return CMatrix(aTransposeMatrix, m_iColumns, m_iRows);
-	}
-
-	function ToVector()
-	{
-		if (m_iRows == 3)
-			return Vector(m_aMatrix[0][0], m_aMatrix[1][0], m_aMatrix[2][0]);
-
-		if (m_iRows == 4)
-			return Vector4D(m_aMatrix[0][0], m_aMatrix[1][0], m_aMatrix[2][0], m_aMatrix[3][0]);
-
-		if (m_iRows == 2)
-			return Vector2D(m_aMatrix[0][0], m_aMatrix[1][0]);
-	}
-
-	function GetMinor(iRow, iColumn)
-	{
-		if (m_iRows == 1 && m_iColumns == 1)
-			return CMatrix([[1.0]], 1, 1);
-
-		local idx = 0;
-		local aMinor = [];
-
-		for (local i = 0; i < m_iRows; ++i)
-		{
-			if (i == iRow)
-				continue;
-
-			aMinor.push(GetRowArray(i));
-
-			for (local j = 0; j < m_iColumns; ++j)
-			{
-				if (j == iColumn)
-				{
-					aMinor[idx].remove(j);
-					break;
-				}
-			}
-
-			++idx;
-		}
-
-		return CMatrix(aMinor, m_iRows - 1, m_iColumns - 1);
-	}
-
-	function GetColumnArray(iColumn)
-	{
-		local aColumn = [];
-
-		for (local i = 0; i < m_iRows; ++i)
-			aColumn.push(m_aMatrix[i][iColumn]);
-
-		return aColumn;
-	}
-
-	function GetRowArray(iRow) { return clone m_aMatrix[iRow]; }
-
-	function GetCellValue(iRow, iColumn) { return m_aMatrix[iRow][iColumn]; }
-
-	function IsSquare() { return m_iRows == m_iColumns; }
-
-	function GetMatrix() { return m_aMatrix; }
-
-	function GetRows() { return m_iRows; }
-
-	function GetColumns() { return m_iColumns; }
-
-	function _tostring()
-	{
-		local str = "Matrix: (";
-
-		foreach (idx, arr in m_aMatrix)
-		{
-			foreach (_idx, val in arr)
-			{
-				if (m_iColumns - 1 != _idx)
-				{
-					str += val + ", ";
-					continue;
-				}
-
-				str += val;
-			}
-
-			str += (m_iRows - 1 == idx ? ")" : "; ");
-		}
-
-		return str;
-	}
-
-	function _mul(arg)
-	{
-		if (typeof arg == "integer" || typeof arg == "float")
-			return Scale(arg);
-
-		return Multiply(arg);
-	}
-
-	function _set(key, val) { throw null; }
-
-	function _div(arg) { return Division(arg); }
-
-	function _unm() { return Inverse(); }
-
-	function _add(arg) { return Add(arg); }
-
-	function _sub(arg) { return Add(arg.Scale(-1)); }
-
-	m_aMatrix = null;
-	m_iColumns = 0;
-	m_iRows = 0;
-	m_Determinant = 0;
 }
